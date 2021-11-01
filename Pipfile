@@ -1,0 +1,16 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+PyQt5 = "*"
+pyinstaller = "==4.6"
+pipenv = "==2021.5.29"
+pyqt5-stubs = "==5.15.2.0"
+application = {path = "./src"}
+
+[dev-packages]
+
+[requires]
+python_version = "3.9"
