@@ -18,12 +18,14 @@ class Gui:
         return "Lalalala"
 
 
-x = Gui(3.0, -4.5)
-print(x.f())
-print(x.getImgPart())
-print(x.getRealPart())
+# x = Gui(3.0, -4.5)
+# print(x.f())
+# print(x.getImgPart())
+# print(x.getRealPart())
 
-app = QApplication([])
-label = QLabel(x.f())
-label.show()
-app.exec()
+# app = QApplication([])
+# label = QLabel(x.f())
+# label.setMinimumWidth(200)
+# label.setMinimumHeight(200)
+# label.show()
+# app.exec()

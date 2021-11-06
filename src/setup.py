@@ -7,6 +7,6 @@ setup(
     description="Gui Packages",
     author="Eric Misfeld",
     author_email="mier1011@h-ka.de",
-    packages=['app', 'gui', 'logic']
+    packages=['app', 'gui', 'logic', 'data']
     # package_dir = {'': 'src'}
 )
