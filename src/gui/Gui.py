@@ -1,31 +1,16 @@
+import sys
 import PyQt5
-from PyQt5.QtWidgets import QApplication, QLabel
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QMainWindow
 
 
-class Gui:
+class Gui(QMainWindow):
 
-    def __init__(self, realpart, imgpart):
-        self.r = realpart
-        self.i = imgpart
+    def __init__(self):
+        super().__init__()
+        self.initUI()
 
-    def getRealPart(self):
-        return self.r
+    def initUI(self):
+        self.setGeometry(100, 100, 400, 300)
+        self.setWindowTitle("Burrow Wheeler")
+        self.show()
 
-    def getImgPart(self):
-        return self.i
-
-    def f(self):
-        return "Lalalala"
-
-
-# x = Gui(3.0, -4.5)
-# print(x.f())
-# print(x.getImgPart())
-# print(x.getRealPart())
-
-# app = QApplication([])
-# label = QLabel(x.f())
-# label.setMinimumWidth(200)
-# label.setMinimumHeight(200)
-# label.show()
-# app.exec()
