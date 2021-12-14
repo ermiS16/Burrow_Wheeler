@@ -13,6 +13,7 @@ if __name__ == '__main__':
         text = manipulator.rotateText(text)
         return text
 
+
     input_text = "Wikipedia!"
     print("Input Text: " + input_text)
 
@@ -24,7 +25,7 @@ if __name__ == '__main__':
     new_text = input_text
     text_rotations.append(new_text)
 
-    for i in range(text_length-1):
+    for i in range(text_length - 1):
         new_text = transform_step(new_text)
         text_rotations.append(new_text)
 
@@ -53,17 +54,10 @@ if __name__ == '__main__':
     print("Index: " + str(input_index))
     print("\n")
 
-
     app = QApplication(sys.argv)
     window = Gui.Gui()
     sys.exit(app.exec())
 
-
-
-    #app = Gui.Gui(3, -4.5)
-    #x = app.f()
-    #print(x)
-
-
-
-
+    # app = Gui.Gui(3, -4.5)
+    # x = app.f()
+    # print(x)
