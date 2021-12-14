@@ -11,7 +11,9 @@ class Gui(QMainWindow):
     def __init__(self):
         super().__init__()
         self.mainFrameWidget = QWidget(self)
-        self.mainFrameControlInput = ""
+        self.input_text = ""
+        self.input_delta = 0
+        self.showDeltaInput = True
         self.initUI()
 
     def initUI(self):
@@ -28,9 +30,9 @@ class Gui(QMainWindow):
         self.initMainFrameControl()
 
         self.setCentralWidget(self.mainFrameWidget)
-#        self.testLayout(1)
-#        self.testLayout(2)
-#        self.testLayout(3)
+        #        self.testLayout(1)
+        #        self.testLayout(2)
+        #        self.testLayout(3)
         #        self.addLabel("Input", 0, 15)
         #        self.initButtons()
         #        self.initInputLine()
@@ -59,7 +61,7 @@ class Gui(QMainWindow):
 
         self.mainContentLeft = QVBoxLayout()
         self.mainContentLeftControl = QHBoxLayout()
-#        self.initMainFrameControl()
+        #        self.initMainFrameControl()
         self.mainContentLeftView = QVBoxLayout()
         self.mainContentLeft.addLayout(self.mainContentLeftControl)
         self.mainContentLeft.addLayout(self.mainContentLeftView)
@@ -78,20 +80,70 @@ class Gui(QMainWindow):
 
     def initMainFrameControl(self):
         self.mainFrameControl.addStretch()
-        self.mainFrameControlInput = QLineEdit()
-        self.mainFrameControlInput.setPlaceholderText("Wikipedia!")
-        label = QLabel("Eingabetext: ")
-        label.setStyleSheet("border: 1px solid black;")
+        self.mainFrameControlTextInput = QLineEdit()
+        self.mainFrameControlTextInput.setPlaceholderText("Wikipedia!")
+        labelTextInput = QLabel("Eingabetext: ")
+        labelTextInput.setStyleSheet("border: 1px solid black;")
+
+        self.mainFrameControlDeltaInput = QLineEdit()
+        self.mainFrameControlDeltaInput.setPlaceholderText("Delta")
+        self.toggleShowDeltaInput()
+        # self.mainFrameControlDeltaInput.setDisabled(True)
+        labelDeltaInput = QLabel("Delta: ")
+        labelDeltaInput.setStyleSheet("border: 1px solid black;")
 
         self.mainFrameControlSubmit = QPushButton("Transformiere")
+        self.mainFrameControlSubmit.clicked.connect(self.startTransform)
         self.mainFrameControlDirection = QComboBox()
         self.mainFrameControlDirection.addItems(['Vorwärts', 'Rückwärts'])
+        self.mainFrameControlDirection.currentTextChanged.connect(self.initDirection)
 
-        self.mainFrameControl.addWidget(label)
-        self.mainFrameControl.addWidget(self.mainFrameControlInput)
+        self.mainFrameControl.addWidget(labelTextInput)
+        self.mainFrameControl.addWidget(self.mainFrameControlTextInput)
+        self.mainFrameControl.addWidget(labelDeltaInput)
+        self.mainFrameControl.addWidget(self.mainFrameControlDeltaInput)
+
         self.mainFrameControl.addWidget(self.mainFrameControlSubmit)
         self.mainFrameControl.addWidget(self.mainFrameControlDirection)
         self.mainFrameControl.addStretch()
+
+
+    def initDirection(self):
+        if(self.mainFrameControlDirection.currentText() == "Vorwärts"):
+            self.toggleShowDeltaInput()
+            self.initForward()
+
+        if(self.mainFrameControlDirection.currentText() == "Rückwärts"):
+            self.toggleShowDeltaInput()
+            self.initBackwards()
+
+
+    def toggleShowDeltaInput(self):
+        if(self.mainFrameControlDeltaInput.isEnabled()):
+            self.mainFrameControlDeltaInput.setDisabled(True)
+            self.mainFrameControlDeltaInput.setToolTip("Nur bei Rückwärtstransformation verfügbar")
+        else:
+            self.mainFrameControlDeltaInput.setDisabled(False)
+            self.mainFrameControlDeltaInput.setToolTip("")
+
+
+    def startTransform(self):
+        direction = self.mainFrameControlDirection.currentText()
+        self.input_text = self.mainFrameControlTextInput.text()
+        self.input_delta = self.mainFrameControlDeltasInput.text()
+
+        if(direction == 'Vorwärts'):
+            pass
+        if(direction == 'Rückwärts'):
+            pass
+
+
+    def initForward(self):
+        print("Vorwärts")
+
+
+    def initBackwards(self):
+        print("Rückwärts")
 
 
     def createMenu(self):
@@ -113,26 +165,8 @@ class Gui(QMainWindow):
         label.move(x, y)
         label.setFont(QFont("Arial", 20))
 
-    def initButtons(self):
-        # quit_button = QPushButton("Quit", self)
-        # quit_button.move(300, 0)
-        # quit_button.clicked.connect(self.quitButtonClicked)
-
-        submit_button = QPushButton("Submit", self)
-        submit_button.move(200, 15)
-        submit_button.clicked.connect(self.getInput)
-
-    def quitButtonClicked(self):
-        self.close()
-
-    def initInputLine(self):
-        self.input = QLineEdit(self)
-        self.input.move(100, 15)
-        self.input.setAlignment(Qt.AlignLeft)
 
     def getInput(self):
         input_text = self.input.text()
-        # print(str(input_text))
-        self.addLabel(input_text, 200, 50)
-        self.addW
+
 
