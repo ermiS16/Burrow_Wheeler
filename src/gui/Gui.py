@@ -1,7 +1,7 @@
 import sys
 import PyQt5
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QMainWindow, QPushButton, QLineEdit, QHBoxLayout, \
-    QVBoxLayout, QBoxLayout, QAction, QComboBox, QScrollArea
+    QVBoxLayout, QBoxLayout, QAction, QComboBox, QScrollArea, QSizePolicy
 from PyQt5.QtGui import QFont, QColor, QTextFormat
 from PyQt5.QtCore import Qt, QSize, QRect
 
@@ -14,6 +14,9 @@ class Gui(QMainWindow):
         self.input_text = ""
         self.input_delta = 0
         self.showDeltaInput = True
+        self.forwardInitialized = False
+        self.backwardInitialized = False
+        self.directions = ['Richtung Auswählen', 'Vorwärts', 'Rückwärts']
         self.initUI()
 
     def initUI(self):
@@ -28,6 +31,7 @@ class Gui(QMainWindow):
         self.createMenu()
         self.initLayout()
         self.initMainFrameControl()
+        # self.initForward()
 
         self.setCentralWidget(self.mainFrameWidget)
         #        self.testLayout(1)
@@ -95,9 +99,10 @@ class Gui(QMainWindow):
         self.mainFrameControlSubmit = QPushButton("Transformiere")
         self.mainFrameControlSubmit.clicked.connect(self.startTransform)
         self.mainFrameControlDirection = QComboBox()
-        self.mainFrameControlDirection.addItems(['Vorwärts', 'Rückwärts'])
+        self.mainFrameControlDirection.addItems(self.directions)
         self.mainFrameControlDirection.currentTextChanged.connect(self.initDirection)
 
+        self.mainFrameControl.setAlignment(Qt.AlignTop)
         self.mainFrameControl.addWidget(labelTextInput)
         self.mainFrameControl.addWidget(self.mainFrameControlTextInput)
         self.mainFrameControl.addWidget(labelDeltaInput)
@@ -109,11 +114,16 @@ class Gui(QMainWindow):
 
 
     def initDirection(self):
-        if(self.mainFrameControlDirection.currentText() == "Vorwärts"):
+        direction = self.mainFrameControlDirection.currentText()
+        if(direction == self.directions[0]):
+            print(str(direction))
+            pass
+
+        if(direction == self.directions[1]):
             self.toggleShowDeltaInput()
             self.initForward()
 
-        if(self.mainFrameControlDirection.currentText() == "Rückwärts"):
+        if(direction == self.directions[2]):
             self.toggleShowDeltaInput()
             self.initBackwards()
 
@@ -130,21 +140,106 @@ class Gui(QMainWindow):
     def startTransform(self):
         direction = self.mainFrameControlDirection.currentText()
         self.input_text = self.mainFrameControlTextInput.text()
-        self.input_delta = self.mainFrameControlDeltasInput.text()
+        self.input_delta = self.mainFrameControlDeltaInput.text()
+
+        print(self.input_text)
+        print(self.input_delta)
+
+        if(len(self.input_text) == 0):
+            pass
 
         if(direction == 'Vorwärts'):
-            pass
-        if(direction == 'Rückwärts'):
-            pass
+            text = "Transformation Vorwärts: \n\n"
+            text = text + "Der Text wird als erstes rotiert."
+            self.description.setText(text)
 
+
+        if(direction == 'Rückwärts'):
+            if (len(self.input_delta) == 0 or not self.input_delta.isnumeric()):
+                pass
+
+        print("Control Test")
 
     def initForward(self):
-        print("Vorwärts")
+        if(self.forwardInitialized):
+            pass
+
+        if(not self.forwardInitialized):
+            print("Init Forward")
+            step_label = QLabel("1.) Rotation")
+            step_label.setStyleSheet("border: 1px solid black;")
+            button_next = QPushButton("Next")
+            button_next.setStyleSheet("border: 1px solid black;")
+            button_prev = QPushButton("Prev")
+            button_prev.setStyleSheet("border: 1px solid black;")
+
+
+            self.mainContentLeftControl.setAlignment(Qt.AlignTop)
+            self.mainContentLeftControl.addWidget(step_label)
+            self.mainContentLeftControl.addWidget(button_next)
+            self.mainContentLeftControl.addWidget(button_prev)
+
+
+            self.mainContentRightViewEncoded = QHBoxLayout()
+            encoded_label = QLabel("Encoded: ")
+            encoded_label.setStyleSheet("border: 1px solid black;")
+            self.encoded_value = QLabel("")
+            self.encoded_value.setStyleSheet("border: 1px solid black;")
+            self.encoded_value.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+            self.mainContentRightViewEncoded.addWidget(encoded_label)
+            self.mainContentRightViewEncoded.addWidget(self.encoded_value)
+
+            self.mainContentRightViewIndex = QHBoxLayout()
+            index_label = QLabel("Index: ")
+            index_label.setStyleSheet("border: 1px solid black;")
+            self.index_value = QLabel("")
+            self.index_value.setStyleSheet("border: 1px solid black;")
+            self.mainContentRightViewIndex.addWidget(index_label)
+            self.mainContentRightViewIndex.addWidget(self.index_value)
+
+            self.mainContentRightViewDescription = QVBoxLayout()
+            description_label = QLabel("Beschreibung")
+            description_label.setStyleSheet("border: 1px solid black;")
+            self.mainContentRightViewDescription.addWidget(description_label)
+            self.description = QLabel("")
+            self.description.setStyleSheet("border: 1px solid black;")
+            self.description.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+            self.mainContentRightViewDescription.addWidget(self.description)
+
+            self.mainContentRightView.setAlignment(Qt.AlignTop)
+            self.mainContentRightView.addLayout(self.mainContentRightViewEncoded)
+            self.mainContentRightView.addLayout(self.mainContentRightViewIndex)
+            self.mainContentRightView.addLayout(self.mainContentRightViewDescription)
+            self.forwardInitialized = True
 
 
     def initBackwards(self):
-        print("Rückwärts")
+        print("Init Backward")
+        if(self.forwardInitialized):
+            self.clearForward()
+        self.forwardInitialized = False
+        #self.clearLayout(self.mainContentRightView)
 
+
+    def clearForward(self):
+        print("Clear Content Right")
+        self.clearLayout(self.mainContentRightViewEncoded)
+        self.clearLayout(self.mainContentRightViewIndex)
+        self.clearLayout(self.mainContentRightViewDescription)
+        self.clearLayout(self.mainContentLeftControl)
+
+    def clearLayout(self, layout):
+        print("Clear Layout")
+        if layout.count() > 0:
+            while layout.count():
+                print("Count: " + str(layout.count()))
+                item = layout.itemAt(0)
+                widget = item.widget()
+                if widget is not None:
+                    print("Widget")
+                    widget.setParent(None)
+
+        print(str(layout.count()))
 
     def createMenu(self):
         exit_act = QAction('Exit', self)
