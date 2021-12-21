@@ -1,9 +1,10 @@
 import sys
+import time
 import PyQt5
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QMainWindow, QPushButton, QLineEdit, QHBoxLayout, \
-    QVBoxLayout, QBoxLayout, QAction, QComboBox, QScrollArea, QSizePolicy
-from PyQt5.QtGui import QFont, QColor, QTextFormat
-from PyQt5.QtCore import Qt, QSize, QRect
+    QVBoxLayout, QBoxLayout, QAction, QComboBox, QScrollArea, QSizePolicy, QCheckBox, QGridLayout, QFormLayout
+from PyQt5.QtGui import QFont, QColor, QTextFormat, QRegExpValidator, QIntValidator
+from PyQt5.QtCore import Qt, QSize, QRect, QRegExp
 
 
 class Gui(QMainWindow):
@@ -12,7 +13,9 @@ class Gui(QMainWindow):
         super().__init__()
         self.mainFrameWidget = QWidget(self)
         self.input_text = ""
+        self.input_text_length = 0
         self.input_delta = 0
+        self.rotation_step = 0
         self.showDeltaInput = True
         self.forwardInitialized = False
         self.backwardInitialized = False
@@ -42,9 +45,15 @@ class Gui(QMainWindow):
         #        self.initInputLine()
         self.show()
 
-    def testLayout(self, value):
-        label = QLabel("Label " + str(value))
-        self.h_container_left_main.addWidget(label)
+
+    def addContentRow(self):
+        char_list = []
+        for i in range(self.input_text_length):
+            label = QLabel(str(i))
+            char_list.append(label)
+            self.mainContentLeftViewGrid.addWidget(label, self.rotation_step, i)
+
+
 
 
     def initLayout(self):
@@ -59,20 +68,25 @@ class Gui(QMainWindow):
 
         self.mainFrameLayout = QVBoxLayout()
         self.mainFrameControl = QHBoxLayout()
-        self.mainFrameControl.setGeometry(QRect(0, 0, mainFrameControlWidth, mainFrameControlHeight))
+        self.mainFrameControl.setAlignment(Qt.AlignTop)
+        #self.mainFrameControl.setGeometry(QRect(0, 0, mainFrameControlWidth, mainFrameControlHeight))
 
         self.mainFrameContent = QHBoxLayout()
+        #self.mainFrameContent.setAlignment(Qt.AlignTop)
 
         self.mainContentLeft = QVBoxLayout()
+        self.mainContentLeft.setAlignment(Qt.AlignTop)
         self.mainContentLeftControl = QHBoxLayout()
         #        self.initMainFrameControl()
         self.mainContentLeftView = QVBoxLayout()
         self.mainContentLeft.addLayout(self.mainContentLeftControl)
         self.mainContentLeft.addLayout(self.mainContentLeftView)
+        self.mainContentLeft.addStretch()
 
         self.mainContentRight = QVBoxLayout()
         self.mainContentRightView = QVBoxLayout()
         self.mainContentRight.addLayout(self.mainContentRightView)
+        self.mainContentRight.addStretch()
 
         self.mainFrameContent.addLayout(self.mainContentLeft)
         self.mainFrameContent.addLayout(self.mainContentRight)
@@ -86,23 +100,34 @@ class Gui(QMainWindow):
         self.mainFrameControl.addStretch()
         self.mainFrameControlTextInput = QLineEdit()
         self.mainFrameControlTextInput.setPlaceholderText("Wikipedia!")
+        #self.mainFrameControlTextInput.setMaxLength(15)
+        input_text_regex = QRegExp(".{2,15}")
+        input_text_validator = QRegExpValidator(input_text_regex)
+        self.mainFrameControlTextInput.setValidator(input_text_validator)
+
         labelTextInput = QLabel("Eingabetext: ")
         labelTextInput.setStyleSheet("border: 1px solid black;")
 
         self.mainFrameControlDeltaInput = QLineEdit()
         self.mainFrameControlDeltaInput.setPlaceholderText("Delta")
-        self.toggleShowDeltaInput()
+        input_delta_regex = QRegExp("\d{1,4}")
+        input_delta_validator = QRegExpValidator(input_delta_regex)
+        self.mainFrameControlDeltaInput.setValidator(input_delta_validator)
+        #self.toggleShowDeltaInput()
         # self.mainFrameControlDeltaInput.setDisabled(True)
         labelDeltaInput = QLabel("Delta: ")
         labelDeltaInput.setStyleSheet("border: 1px solid black;")
 
         self.mainFrameControlSubmit = QPushButton("Transformiere")
         self.mainFrameControlSubmit.clicked.connect(self.startTransform)
+
+
         self.mainFrameControlDirection = QComboBox()
         self.mainFrameControlDirection.addItems(self.directions)
         self.mainFrameControlDirection.currentTextChanged.connect(self.initDirection)
 
-        self.mainFrameControl.setAlignment(Qt.AlignTop)
+
+        #self.mainFrameControl.setAlignment(Qt.AlignTop)
         self.mainFrameControl.addWidget(labelTextInput)
         self.mainFrameControl.addWidget(self.mainFrameControlTextInput)
         self.mainFrameControl.addWidget(labelDeltaInput)
@@ -111,6 +136,8 @@ class Gui(QMainWindow):
         self.mainFrameControl.addWidget(self.mainFrameControlSubmit)
         self.mainFrameControl.addWidget(self.mainFrameControlDirection)
         self.mainFrameControl.addStretch()
+        #print(str(self.mainFrameControl.sizeHint()))
+        #self.mainFrameControl.setStretchFactor(self, 1)
 
 
     def initDirection(self):
@@ -140,6 +167,7 @@ class Gui(QMainWindow):
     def startTransform(self):
         direction = self.mainFrameControlDirection.currentText()
         self.input_text = self.mainFrameControlTextInput.text()
+        self.input_text_length = len(self.input_text)
         self.input_delta = self.mainFrameControlDeltaInput.text()
 
         print(self.input_text)
@@ -152,6 +180,7 @@ class Gui(QMainWindow):
             text = "Transformation Vorwärts: \n\n"
             text = text + "Der Text wird als erstes rotiert."
             self.description.setText(text)
+            self.addContentRow()
 
 
         if(direction == 'Rückwärts'):
@@ -168,24 +197,36 @@ class Gui(QMainWindow):
             print("Init Forward")
             step_label = QLabel("1.) Rotation")
             step_label.setStyleSheet("border: 1px solid black;")
-            button_next = QPushButton("Next")
-            button_next.setStyleSheet("border: 1px solid black;")
-            button_prev = QPushButton("Prev")
-            button_prev.setStyleSheet("border: 1px solid black;")
+            self.button_next = QPushButton("Next")
+            self.button_next.setStyleSheet("border: 1px solid black;")
+            self.button_next.clicked.connect(self.nextStep)
+            self.button_prev = QPushButton("Prev")
+            self.button_prev.setStyleSheet("border: 1px solid black;")
+            self.button_prev.clicked.connect(self.prevStep)
+            auto_label = QLabel("Auto")
+            auto_label.setStyleSheet("border: 1px solid black;")
+            #auto_label.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+            self.auto_checkbox = QCheckBox()
+            self.auto_checkbox.setChecked(False)
+            self.auto_checkbox.stateChanged.connect(self.toggleAutorun)
 
 
-            self.mainContentLeftControl.setAlignment(Qt.AlignTop)
+            #self.mainContentLeftControl.setAlignment(Qt.AlignTop)
             self.mainContentLeftControl.addWidget(step_label)
-            self.mainContentLeftControl.addWidget(button_next)
-            self.mainContentLeftControl.addWidget(button_prev)
+            self.mainContentLeftControl.addWidget(self.button_next)
+            self.mainContentLeftControl.addWidget(self.button_prev)
+            self.mainContentLeftControl.addWidget(self.auto_checkbox)
+            self.mainContentLeftControl.addWidget(auto_label)
 
+            self.mainContentLeftViewGrid = QGridLayout()
+            self.mainContentLeftView.addLayout(self.mainContentLeftViewGrid)
 
             self.mainContentRightViewEncoded = QHBoxLayout()
             encoded_label = QLabel("Encoded: ")
             encoded_label.setStyleSheet("border: 1px solid black;")
             self.encoded_value = QLabel("")
             self.encoded_value.setStyleSheet("border: 1px solid black;")
-            self.encoded_value.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+            #self.encoded_value.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
             self.mainContentRightViewEncoded.addWidget(encoded_label)
             self.mainContentRightViewEncoded.addWidget(self.encoded_value)
 
@@ -203,10 +244,10 @@ class Gui(QMainWindow):
             self.mainContentRightViewDescription.addWidget(description_label)
             self.description = QLabel("")
             self.description.setStyleSheet("border: 1px solid black;")
-            self.description.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+            #self.description.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
             self.mainContentRightViewDescription.addWidget(self.description)
 
-            self.mainContentRightView.setAlignment(Qt.AlignTop)
+            #self.mainContentRightView.setAlignment(Qt.AlignTop)
             self.mainContentRightView.addLayout(self.mainContentRightViewEncoded)
             self.mainContentRightView.addLayout(self.mainContentRightViewIndex)
             self.mainContentRightView.addLayout(self.mainContentRightViewDescription)
@@ -265,3 +306,31 @@ class Gui(QMainWindow):
         input_text = self.input.text()
 
 
+    def nextStep(self):
+        print("Next Step")
+        self.addContentRow()
+        self.rotation_step = self.rotation_step + 1
+        pass
+
+    def prevStep(self):
+        print("Prev Step")
+        pass
+
+
+    def toggleAutorun(self):
+        if(self.auto_checkbox.isChecked()):
+            self.button_next.setDisabled(True)
+            self.button_prev.setDisabled(True)
+            print("Autorun On")
+            self.autorun()
+        if(self.auto_checkbox.isChecked()):
+            self.button_next.setDisabled(False)
+            self.button_prev.setDisabled(False)
+            print("Autorun Off")
+
+
+    def autorun(self):
+        print("Autorun")
+        #for i in range(10):
+        #    print("Step " + str(i))
+        #    time.sleep(2)
