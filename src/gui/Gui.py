@@ -1,5 +1,6 @@
 import sys
 import time
+from data import iText
 from enum import Enum
 import PyQt5
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QMainWindow, QPushButton, QLineEdit, QHBoxLayout, \
@@ -22,12 +23,10 @@ class Gui(QMainWindow):
     def __init__(self):
         super().__init__()
         self.mainFrameWidget = QWidget(self)
-        self.input_text = ""
-        self.input_text_length = 0
+        self.input_text = iText.Text("")
+        self.text_table = iText.TextTable()
         self.input_delta = 0
         self.rotation_step = 0
-        self.forwardInitialized = False
-        self.backwardInitialized = False
         self.state = STATE.INIT
         self.directions = ['Richtung Auswählen', 'Vorwärts', 'Rückwärts']
         self.initUI()
@@ -50,15 +49,16 @@ class Gui(QMainWindow):
         self.show()
 
 
-    def addContentRow(self):
-        if self.state == STATE.F_ROTATION:
-            char_list = []
-            for i in range(self.input_text_length):
-                label = QLabel(str(self.input_text[i]))
-                char_list.append(label)
-                self.mainContentLeftViewGrid.addWidget(label, self.rotation_step, i)
-        else:
-            pass
+    def createMenu(self):
+        exit_act = QAction('Exit', self)
+        exit_act.setShortcut('Ctrl+Q')
+        exit_act.triggered.connect(self.close)
+
+        menu_bar = self.menuBar()
+        menu_bar.setNativeMenuBar(False)
+
+        file_menu = menu_bar.addMenu('File')
+        file_menu.addAction(exit_act)
 
 
     def initLayout(self):
@@ -139,12 +139,12 @@ class Gui(QMainWindow):
 
 
     def initDirections(self):
-        self.initStart()
-        self.initForward()
-        self.initBackwards()
+        self.initStartLayout()
+        self.initForwardLayout()
+        self.initBackwardLayout()
 
 
-    def initStart(self):
+    def initStartLayout(self):
         self.page_start = QWidget()
         self.s_mainFrameContent = QHBoxLayout()
 
@@ -167,7 +167,7 @@ class Gui(QMainWindow):
         self.page_start.setLayout(self.s_mainFrameContent)
         self.mainFrameContentStack.addWidget(self.page_start)
 
-    def initForward(self):
+    def initForwardLayout(self):
         print("Init Forward")
 
         self.page_forward = QWidget()
@@ -244,12 +244,11 @@ class Gui(QMainWindow):
         self.f_mainContentRightView.addLayout(self.mainContentRightViewEncoded)
         self.f_mainContentRightView.addLayout(self.mainContentRightViewIndex)
         self.f_mainContentRightView.addLayout(self.mainContentRightViewDescription)
-        self.forwardInitialized = True
 
         self.page_forward.setLayout(self.f_mainFrameContent)
         self.mainFrameContentStack.addWidget(self.page_forward)
 
-    def initBackwards(self):
+    def initBackwardLayout(self):
         print("Init Backward")
 
         self.page_backward = QWidget()
@@ -286,87 +285,77 @@ class Gui(QMainWindow):
 
     def startTransform(self):
         direction = self.mainFrameControlDirection.currentText()
-        self.input_text = self.mainFrameControlTextInput.text()
-        self.input_text_length = len(self.input_text)
+        input = self.mainFrameControlTextInput.text()
+        self.input_text.setText(input)
         self.input_delta = self.mainFrameControlDeltaInput.text()
 
-        print(self.input_text)
+        print(self.input_text.getText())
         print(self.input_delta)
 
-        if(len(self.input_text) == 0):
+        if(len(input) == 0):
             # ToDO: Add user information: User has to choose direction
             pass
 
         if(direction == 'Vorwärts'):
-
-            text = "Transformation Vorwärts: \n\n"
-            text = text + "Der Text wird als erstes rotiert."
-            self.description.setText(text)
-            self.addContentRow()
+            self.initForwardTransformation()
 
 
         if(direction == 'Rückwärts'):
-            if (len(self.input_delta) == 0 or not self.input_delta.isnumeric()):
-                pass
+            pass
 
         print("Control Test")
 
 
-    # def clearForward(self):
-    #     print("Clear Content Right")
-    #     self.clearLayout(self.mainContentRightViewEncoded)
-    #     self.clearLayout(self.mainContentRightViewIndex)
-    #     self.clearLayout(self.mainContentRightViewDescription)
-    #     self.clearLayout(self.f_mainContentLeftControl)
-    #
-    # def clearLayout(self, layout):
-    #     print("Clear Layout")
-    #     if layout.count() > 0:
-    #         while layout.count():
-    #             print("Count: " + str(layout.count()))
-    #             item = layout.itemAt(0)
-    #             widget = item.widget()
-    #             if widget is not None:
-    #                 print("Widget")
-    #                 widget.setParent(None)
-    #
-    #     print(str(layout.count()))
-
-    def createMenu(self):
-        exit_act = QAction('Exit', self)
-        exit_act.setShortcut('Ctrl+Q')
-        exit_act.triggered.connect(self.close)
-
-        menu_bar = self.menuBar()
-        menu_bar.setNativeMenuBar(False)
-
-        file_menu = menu_bar.addMenu('File')
-        file_menu.addAction(exit_act)
-
-
-    def addLabel(self, value, x, y):
-        print("X: " + str(x) + " | Y: " + str(y) + " | " + str(value))
-        label = QLabel(self)
-        label.setText(value)
-        label.move(x, y)
-        label.setFont(QFont("Arial", 20))
-
-
-    def getInput(self):
-        input_text = self.input.text()
+    def initForwardTransformation(self):
+        self.setState(STATE.F_ROTATION)
+        description_text = "Transformation Vorwärts: \n\n" \
+                           "Der Text wird als erstes rotiert. Die Rotationen werden in einer Tabelle gespeichert."
+        self.description.setText(description_text)
+        self.text_table.addText(self.input_text.getText())
+        self.addRotation(self.input_text.getText())
+        self.rotation_step = self.rotation_step + 1
 
 
     def nextStep(self):
         print("Next Step")
-        self.addContentRow()
-        self.rotation_step = self.rotation_step + 1
-        pass
+        print(self.state)
+        if(self.state == STATE.F_ROTATION):
+            print(self.rotation_step)
+#            print(self.text_table.getTextList())
+#            print(self.text_table.getTextAtIndex((self.rotation_step-1)))
+            old_text = self.text_table.getTextAtIndex((self.rotation_step-1))
+            rotate_text = iText.rotateText(old_text)
+            self.text_table.addText(rotate_text)
+            self.addRotation(rotate_text)
+            self.rotation_step = self.rotation_step + 1
+            print(self.input_text.getTextLength())
+            if(self.rotation_step == self.input_text.getTextLength()):
+                print("Set State F_SORT")
+                self.setState(STATE.F_SORT)
+
+        if(self.state == STATE.F_SORT):
+            pass
 
     def prevStep(self):
         print("Prev Step")
         self.rotation_step = self.rotation_step - 1
         pass
 
+
+    def addRotation(self, text):
+        if self.state == STATE.F_ROTATION:
+            rotation_index = str(self.rotation_step+1) + ".)"
+            label = QLabel(str(rotation_index))
+            self.mainContentLeftViewGrid.addWidget(label, self.rotation_step, 0)
+            for i in range(len(text)):
+                label = QLabel(str(text[i]))
+                self.mainContentLeftViewGrid.addWidget(label, self.rotation_step, i+1)
+        else:
+            pass
+
+
+    def removeContentRow(self):
+        pass
 
     def toggleAutorun(self):
         if(self.auto_checkbox.isChecked()):
@@ -385,6 +374,7 @@ class Gui(QMainWindow):
         #for i in range(10):
         #    print("Step " + str(i))
         #    time.sleep(2)
+
 
     def setState(self, state):
         self.state = state
