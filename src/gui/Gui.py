@@ -23,10 +23,12 @@ class Gui(QMainWindow):
     def __init__(self):
         super().__init__()
         self.mainFrameWidget = QWidget(self)
-        self.input_text = iText.Text("")
-        self.text_table = iText.TextTable()
+        self.input_text = None
+        self.text_table = None
+        self.rotation_entries = []
         self.input_delta = 0
-        self.rotation_step = 0
+        self.f_rotation_step = 0
+        self.f_sort_step = 0
         self.state = STATE.INIT
         self.directions = ['Richtung Auswählen', 'Vorwärts', 'Rückwärts']
         self.initUI()
@@ -74,7 +76,6 @@ class Gui(QMainWindow):
         self.mainFrameLayout = QVBoxLayout()
         self.mainFrameControl = QHBoxLayout()
         self.mainFrameControl.setAlignment(Qt.AlignTop)
-        #self.mainFrameControl.setGeometry(QRect(0, 0, mainFrameControlWidth, mainFrameControlHeight))
 
         self.mainFrameContentStack = QStackedLayout()
 
@@ -88,7 +89,7 @@ class Gui(QMainWindow):
         self.mainFrameControl.addStretch()
         self.mainFrameControlTextInput = QLineEdit()
         self.mainFrameControlTextInput.setPlaceholderText("Wikipedia!")
-        #self.mainFrameControlTextInput.setMaxLength(15)
+        self.mainFrameControlTextInput.setText("Wikipedia!")
         input_text_regex = QRegExp(".{2,15}")
         input_text_validator = QRegExpValidator(input_text_regex)
         self.mainFrameControlTextInput.setValidator(input_text_validator)
@@ -109,13 +110,10 @@ class Gui(QMainWindow):
         self.mainFrameControlSubmit = QPushButton("Transformiere")
         self.mainFrameControlSubmit.clicked.connect(self.startTransform)
 
-
         self.mainFrameControlDirection = QComboBox()
         self.mainFrameControlDirection.addItems(self.directions)
         self.mainFrameControlDirection.currentTextChanged.connect(self.switchPage)
 
-
-        #self.mainFrameControl.setAlignment(Qt.AlignTop)
         self.mainFrameControl.addWidget(labelTextInput)
         self.mainFrameControl.addWidget(self.mainFrameControlTextInput)
         self.mainFrameControl.addWidget(labelDeltaInput)
@@ -124,8 +122,6 @@ class Gui(QMainWindow):
         self.mainFrameControl.addWidget(self.mainFrameControlSubmit)
         self.mainFrameControl.addWidget(self.mainFrameControlDirection)
         self.mainFrameControl.addStretch()
-        #print(str(self.mainFrameControl.sizeHint()))
-        #self.mainFrameControl.setStretchFactor(self, 1)
 
 
     def switchPage(self):
@@ -193,18 +189,16 @@ class Gui(QMainWindow):
         step_label.setStyleSheet("border: 1px solid black;")
         self.button_next = QPushButton("Next")
         self.button_next.setStyleSheet("border: 1px solid black;")
-        self.button_next.clicked.connect(self.nextStep)
+        self.button_next.clicked.connect(self.f_nextStep)
         self.button_prev = QPushButton("Prev")
         self.button_prev.setStyleSheet("border: 1px solid black;")
-        self.button_prev.clicked.connect(self.prevStep)
+        self.button_prev.clicked.connect(self.f_prevStep)
         auto_label = QLabel("Auto")
         auto_label.setStyleSheet("border: 1px solid black;")
-        #auto_label.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.auto_checkbox = QCheckBox()
         self.auto_checkbox.setChecked(False)
         self.auto_checkbox.stateChanged.connect(self.toggleAutorun)
 
-        #self.mainContentLeftControl.setAlignment(Qt.AlignTop)
         self.f_mainContentLeftControl.addWidget(step_label)
         self.f_mainContentLeftControl.addWidget(self.button_next)
         self.f_mainContentLeftControl.addWidget(self.button_prev)
@@ -219,7 +213,6 @@ class Gui(QMainWindow):
         encoded_label.setStyleSheet("border: 1px solid black;")
         self.encoded_value = QLabel("")
         self.encoded_value.setStyleSheet("border: 1px solid black;")
-        #self.encoded_value.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.mainContentRightViewEncoded.addWidget(encoded_label)
         self.mainContentRightViewEncoded.addWidget(self.encoded_value)
 
@@ -237,10 +230,8 @@ class Gui(QMainWindow):
         self.mainContentRightViewDescription.addWidget(description_label)
         self.description = QLabel("")
         self.description.setStyleSheet("border: 1px solid black;")
-        #self.description.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.mainContentRightViewDescription.addWidget(self.description)
 
-        #self.mainContentRightView.setAlignment(Qt.AlignTop)
         self.f_mainContentRightView.addLayout(self.mainContentRightViewEncoded)
         self.f_mainContentRightView.addLayout(self.mainContentRightViewIndex)
         self.f_mainContentRightView.addLayout(self.mainContentRightViewDescription)
@@ -286,7 +277,7 @@ class Gui(QMainWindow):
     def startTransform(self):
         direction = self.mainFrameControlDirection.currentText()
         input = self.mainFrameControlTextInput.text()
-        self.input_text.setText(input)
+        self.input_text = iText.Text(input)
         self.input_delta = self.mainFrameControlDeltaInput.text()
 
         print(self.input_text.getText())
@@ -303,59 +294,88 @@ class Gui(QMainWindow):
         if(direction == 'Rückwärts'):
             pass
 
-        print("Control Test")
-
 
     def initForwardTransformation(self):
         self.setState(STATE.F_ROTATION)
         description_text = "Transformation Vorwärts: \n\n" \
                            "Der Text wird als erstes rotiert. Die Rotationen werden in einer Tabelle gespeichert."
         self.description.setText(description_text)
+        self.f_clearGridRotationTable()
+        self.text_table = iText.TextTable()
         self.text_table.addText(self.input_text.getText())
-        self.addRotation(self.input_text.getText())
-        self.rotation_step = self.rotation_step + 1
+        self.f_rotation_step = 0
+        self.f_addGridRotation(self.input_text.getText())
+        self.f_rotation_step = self.f_rotation_step + 1
 
 
-    def nextStep(self):
+    def f_nextStep(self):
         print("Next Step")
         print(self.state)
         if(self.state == STATE.F_ROTATION):
-            print(self.rotation_step)
-#            print(self.text_table.getTextList())
-#            print(self.text_table.getTextAtIndex((self.rotation_step-1)))
-            old_text = self.text_table.getTextAtIndex((self.rotation_step-1))
+            print(self.f_rotation_step)
+            old_text = self.text_table.getTextAtIndex((self.f_rotation_step - 1))
             rotate_text = iText.rotateText(old_text)
             self.text_table.addText(rotate_text)
-            self.addRotation(rotate_text)
-            self.rotation_step = self.rotation_step + 1
+            self.f_addGridRotation(rotate_text)
+            self.f_rotation_step = self.f_rotation_step + 1
             print(self.input_text.getTextLength())
-            if(self.rotation_step == self.input_text.getTextLength()):
+
+            if(self.f_rotation_step == self.input_text.getTextLength()):
                 print("Set State F_SORT")
                 self.setState(STATE.F_SORT)
 
         if(self.state == STATE.F_SORT):
             pass
 
-    def prevStep(self):
+
+    def f_prevStep(self):
         print("Prev Step")
-        self.rotation_step = self.rotation_step - 1
-        pass
 
 
-    def addRotation(self, text):
+        if(self.state == STATE.F_SORT):
+            f_sort_next_step = self.f_sort_step - 1
+            if (f_sort_next_step < 0):
+                self.state = STATE.F_ROTATION
+            else:
+                pass
+
+        if(self.state == STATE.F_ROTATION):
+            f_rotation_next_step = self.f_rotation_step - 1
+            if(f_rotation_next_step > 0):
+                self.f_rotation_step = self.f_rotation_step - 1
+                self.f_removeGridRotation(self.f_rotation_step)
+
+
+
+    def f_addGridRotation(self, text):
         if self.state == STATE.F_ROTATION:
-            rotation_index = str(self.rotation_step+1) + ".)"
+            rotation_index = str(self.f_rotation_step + 1) + ".)"
             label = QLabel(str(rotation_index))
-            self.mainContentLeftViewGrid.addWidget(label, self.rotation_step, 0)
+            self.mainContentLeftViewGrid.addWidget(label, self.f_rotation_step, 0)
             for i in range(len(text)):
                 label = QLabel(str(text[i]))
-                self.mainContentLeftViewGrid.addWidget(label, self.rotation_step, i+1)
+                self.rotation_entries.append(label)
+                self.mainContentLeftViewGrid.addWidget(label, self.f_rotation_step, i + 1)
         else:
             pass
 
 
-    def removeContentRow(self):
-        pass
+    def f_clearGridRotationTable(self):
+        if(self.text_table != None):
+            print("Text Table Length: " + str(self.text_table.getTableLength()))
+            for row in range(self.text_table.getTableLength()):
+                print("Remove Rotation " + str(row))
+                self.f_removeGridRotation(row)
+
+
+    def f_removeGridRotation(self, row):
+        for i in range(self.input_text.getTextLength()+1):
+            print("Remove Row " + str(row) + " Remove Column " + str(i))
+            entry = self.mainContentLeftViewGrid.itemAtPosition(row, i)
+            if(entry != None):
+                print(isinstance(entry.widget(), QLabel))
+                entry.widget().deleteLater()
+
 
     def toggleAutorun(self):
         if(self.auto_checkbox.isChecked()):
