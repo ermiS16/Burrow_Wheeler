@@ -45,5 +45,8 @@ class TextTable:
     def getTextList(self):
         return self.table
 
+    def getTableLength(self):
+        return len(self.table)
+
     def printTable(self):
         print(self.table)
