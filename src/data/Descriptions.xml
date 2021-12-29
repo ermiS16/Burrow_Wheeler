@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Desctiptions>
+    <forward_rotation>
+        Der Text wird rotiert. Die Richtung der Rotation ist nicht relevant, muss für den gesamten
+        Vorgang jedoch gleich bleiben.
+    </forward_rotation>
+    <forward_sort>
+
+    </forward_sort>
+</Desctiptions>
