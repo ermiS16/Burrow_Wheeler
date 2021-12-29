@@ -1,11 +1,13 @@
+import re
 import sys
 import time
+import xml.etree.ElementTree as ET
 from data import iText
 from enum import Enum
 import PyQt5
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QMainWindow, QPushButton, QLineEdit, QHBoxLayout, \
     QVBoxLayout, QBoxLayout, QAction, QComboBox, QScrollArea, QSizePolicy, QCheckBox, QGridLayout, QFormLayout, \
-    QStackedLayout
+    QStackedLayout, QLayout
 from PyQt5.QtGui import QFont, QColor, QTextFormat, QRegExpValidator, QIntValidator
 from PyQt5.QtCore import Qt, QSize, QRect, QRegExp
 
@@ -16,6 +18,9 @@ class STATE(Enum):
     INIT_BACKWARD = 2
     F_ROTATION = 3
     F_SORT = 4
+    F_ENCODE = 5
+    F_INDEX = 6
+    F_END = 7
 
 
 class Gui(QMainWindow):
@@ -23,23 +28,41 @@ class Gui(QMainWindow):
     def __init__(self):
         super().__init__()
         self.mainFrameWidget = QWidget(self)
+        self.descriptions = {}
         self.input_text = None
         self.text_table = None
-        self.rotation_entries = []
+        self.test_list = []
+        self.test_count = 0
+        self._MAX_STEPS = 0
         self.input_delta = 0
+        self.step = 0
         self.f_rotation_step = 0
         self.f_sort_step = 0
+        self.f_encode_step = 0
         self.state = STATE.INIT
         self.directions = ['Richtung Auswählen', 'Vorwärts', 'Rückwärts']
+        self.loadDescriptions()
         self.initUI()
         self.initDirections()
+
+    def loadDescriptions(self):
+        tree = ET.parse("/home/eric/Dokumente/Repositories/hska/Burrow_Wheeler/src/data/Descriptions.xml")
+        xml_root = tree.getroot()
+        for child in xml_root:
+            ## self.descriptions[child.tag] = child.text
+            #  regex = QRegExp("\s{2, }|\r*|\n*")
+            desc = child.text
+            #desc = re.sub(r"\r*|\n*", "", desc).strip()
+            #  desc = re.sub(r"\ {2, }", "\n", desc)
+            #  self.descriptions[child.tag] = desc
+            self.descriptions[child.tag] = desc.strip()
 
     def initUI(self):
         screen_resolution = self.screen().geometry()
         screen_width, screen_height = screen_resolution.width(), screen_resolution.height()
         print (str(screen_width) + ", " + str(screen_height))
-        window_width = round(screen_width * 0.8)
-        window_height = round(screen_height * 0.8)
+        window_width = round(screen_width * 0.5)
+        window_height = round(screen_height * 0.5)
 
         self.setGeometry(10, 10, window_width, window_height)
         self.setWindowTitle("Burrow Wheeler")
@@ -205,8 +228,13 @@ class Gui(QMainWindow):
         self.f_mainContentLeftControl.addWidget(self.auto_checkbox)
         self.f_mainContentLeftControl.addWidget(auto_label)
 
-        self.mainContentLeftViewGrid = QGridLayout()
-        self.f_mainContentLeftView.addLayout(self.mainContentLeftViewGrid)
+        self.mainContentLeftViewGridRotation = QGridLayout()
+        self.f_mainContentLeftView.addLayout(self.mainContentLeftViewGridRotation)
+
+        self.f_mainContentLeftView.addStretch()
+
+        self.mainContentLeftViewGridSort = QGridLayout()
+        self.f_mainContentLeftView.addLayout(self.mainContentLeftViewGridSort)
 
         self.mainContentRightViewEncoded = QHBoxLayout()
         encoded_label = QLabel("Encoded: ")
@@ -228,9 +256,12 @@ class Gui(QMainWindow):
         description_label = QLabel("Beschreibung")
         description_label.setStyleSheet("border: 1px solid black;")
         self.mainContentRightViewDescription.addWidget(description_label)
+
         self.description = QLabel("")
         self.description.setStyleSheet("border: 1px solid black;")
         self.mainContentRightViewDescription.addWidget(self.description)
+
+        self.f_mainContentRightView.setSizeConstraint(QLayout.SetFixedSize)
 
         self.f_mainContentRightView.addLayout(self.mainContentRightViewEncoded)
         self.f_mainContentRightView.addLayout(self.mainContentRightViewIndex)
@@ -279,7 +310,7 @@ class Gui(QMainWindow):
         input = self.mainFrameControlTextInput.text()
         self.input_text = iText.Text(input)
         self.input_delta = self.mainFrameControlDeltaInput.text()
-
+        self._MAX_STEPS = self.input_text.getTextLength()
         print(self.input_text.getText())
         print(self.input_delta)
 
@@ -297,95 +328,195 @@ class Gui(QMainWindow):
 
     def initForwardTransformation(self):
         self.setState(STATE.F_ROTATION)
-        description_text = "Transformation Vorwärts: \n\n" \
-                           "Der Text wird als erstes rotiert. Die Rotationen werden in einer Tabelle gespeichert."
-        self.description.setText(description_text)
+        self.description.setText(self.descriptions['forward_rotation'])
         self.f_clearGridRotationTable()
         self.text_table = iText.TextTable()
         self.text_table.addText(self.input_text.getText())
-        self.f_rotation_step = 0
-        self.f_addGridRotation(self.input_text.getText())
-        self.f_rotation_step = self.f_rotation_step + 1
+        # self.f_rotation_step = 0
+        self.f_addGridRotation(self.step, self.input_text.getText())
+        self.step = self.step + 1
+        # self.f_addGridRotation(self.f_rotation_step, self.input_text.getText())
+        # self.f_rotation_step = self.f_rotation_step + 1
 
 
     def f_nextStep(self):
         print("Next Step")
         print(self.state)
+
         if(self.state == STATE.F_ROTATION):
-            print(self.f_rotation_step)
-            old_text = self.text_table.getTextAtIndex((self.f_rotation_step - 1))
-            rotate_text = iText.rotateText(old_text)
-            self.text_table.addText(rotate_text)
-            self.f_addGridRotation(rotate_text)
-            self.f_rotation_step = self.f_rotation_step + 1
-            print(self.input_text.getTextLength())
+            self.printSteps()
+            if(self.step < self._MAX_STEPS):
+                old_text = self.text_table.getLastText()
+                rotate_text = iText.rotateText(old_text)
+                self.text_table.addText(rotate_text)
+                self.text_table.printTable()
+                self.f_addGridRotation(self.step, rotate_text)
+                self.step = self.step + 1
 
-            if(self.f_rotation_step == self.input_text.getTextLength()):
-                print("Set State F_SORT")
+            if(self.step == self._MAX_STEPS):
                 self.setState(STATE.F_SORT)
+                self.step = 0
+                self.description.setText(self.descriptions['forward_sort'])
 
-        if(self.state == STATE.F_SORT):
-            pass
+        elif(self.state == STATE.F_SORT):
+            self.printSteps()
+            if (self.step < self._MAX_STEPS):
+                self.text_table.sortTable()
+                self.markRotatedGrid(self.step)
+                sorted_text = self.text_table.getTextAtIndex(self.text_table.getRef(self.step))
+                self.f_addGridSort(self.step, sorted_text)
+                self.step = self.step + 1
 
+            if self.step == self._MAX_STEPS:
+                self.setState(STATE.F_ENCODE)
+                self.step = 0
+                self.description.setText(self.descriptions['forward_encode'])
+
+        elif(self.state == STATE.F_ENCODE):
+            if self.step < self._MAX_STEPS:
+                self.step = self.step + 1
+
+            if self.step == self._MAX_STEPS:
+                self.setState(STATE.F_INDEX)
+                self.step = 0
+                self.description.setText(self.descriptions['forward_index'])
+
+    def markRotatedGrid(self, row):
+        # for i in range(self.text_table.getTableLength()):
+        for i in range(self._MAX_STEPS):
+            # if self.text_table.getRef(self.f_sort_step) == i:
+            if self.text_table.getRef(row) == i:
+                color = "red"
+            else:
+                color = "gray"
+            self.setColorAtRotationGridIndex(i, color)
+
+    def demarkRotatedGrid(self):
+        # for i in range(self.text_table.getTableLength()):
+        for i in range(self._MAX_STEPS):
+            self.setColorAtRotationGridIndex(i, "black")
+
+    def printSteps(self):
+        # print("F_Rotation_Step: " + str(self.f_rotation_step))
+        # print("F_Sorted_Step: " + str(self.f_sort_step))
+        # print("F_Encoded_Step:" + str(self.f_encode_step))
+        print("Step: " + str(self.step))
+        print()
 
     def f_prevStep(self):
         print("Prev Step")
+        self.printSteps()
 
+        if(self.state == STATE.F_INDEX):
+            print(self.state)
+            self.step = self.step - 1
 
-        if(self.state == STATE.F_SORT):
-            f_sort_next_step = self.f_sort_step - 1
-            if (f_sort_next_step < 0):
+            if self.step <= 0:
+                self.setState(STATE.F_ENCODE)
+                self.step = self._MAX_STEPS
+
+        elif(self.state == STATE.F_ENCODE):
+            print(self.state)
+            self.step = self.step - 1
+
+            if self.step <= 0:
+                self.setState(STATE.F_SORT)
+                self.step = self._MAX_STEPS
+
+        elif(self.state == STATE.F_SORT):
+            print(self.state)
+            self.step  = self.step - 1
+
+            self.markRotatedGrid(self.step)
+            self.f_removeGridSort(self.step)
+
+            if (self.step <= 0):
                 self.state = STATE.F_ROTATION
-            else:
-                pass
-
-        if(self.state == STATE.F_ROTATION):
-            f_rotation_next_step = self.f_rotation_step - 1
-            if(f_rotation_next_step > 0):
-                self.f_rotation_step = self.f_rotation_step - 1
-                self.f_removeGridRotation(self.f_rotation_step)
+                self.demarkRotatedGrid()
+                self.step = self._MAX_STEPS
 
 
+        elif(self.state == STATE.F_ROTATION):
+            print(self.state)
+            next_step = self.step - 1
+            print("Rotation Next Step: " + str(next_step))
 
-    def f_addGridRotation(self, text):
+            if(next_step > 0):
+                self.f_removeGridRotation(next_step)
+                self.text_table.removeTextAtIndex(next_step)
+                self.text_table.printTable()
+                self.step = next_step
+
+
+
+
+    def f_addGridRotation(self, row, text):
         if self.state == STATE.F_ROTATION:
-            rotation_index = str(self.f_rotation_step + 1) + ".)"
+            rotation_index = str(row + 1) + ".)"
             label = QLabel(str(rotation_index))
-            self.mainContentLeftViewGrid.addWidget(label, self.f_rotation_step, 0)
+            self.mainContentLeftViewGridRotation.addWidget(label, row, 0)
             for i in range(len(text)):
                 label = QLabel(str(text[i]))
-                self.rotation_entries.append(label)
-                self.mainContentLeftViewGrid.addWidget(label, self.f_rotation_step, i + 1)
+                self.mainContentLeftViewGridRotation.addWidget(label, row, i+1)
+        else:
+            pass
+
+
+    def f_addGridSort(self, row, text):
+        if self.state == STATE.F_SORT:
+            sort_index = str(row + 1) + ".)"
+            label = QLabel(str(sort_index))
+            self.mainContentLeftViewGridSort.addWidget(label, row, 0)
+            for i in range(len(text)):
+                label = QLabel(str(text[i]))
+                self.mainContentLeftViewGridSort.addWidget(label, row, i+1)
         else:
             pass
 
 
     def f_clearGridRotationTable(self):
         if(self.text_table != None):
-            print("Text Table Length: " + str(self.text_table.getTableLength()))
+            # print("Text Table Length: " + str(self.text_table.getTableLength()))
             for row in range(self.text_table.getTableLength()):
-                print("Remove Rotation " + str(row))
+                # print("Remove Rotation " + str(row))
                 self.f_removeGridRotation(row)
 
 
     def f_removeGridRotation(self, row):
         for i in range(self.input_text.getTextLength()+1):
-            print("Remove Row " + str(row) + " Remove Column " + str(i))
-            entry = self.mainContentLeftViewGrid.itemAtPosition(row, i)
+            # print("Rotation: Remove Row " + str(row) + " Remove Column " + str(i))
+            entry = self.mainContentLeftViewGridRotation.itemAtPosition(row, i)
             if(entry != None):
-                print(isinstance(entry.widget(), QLabel))
+                # print(isinstance(entry.widget(), QLabel))
                 entry.widget().deleteLater()
+
+    def f_removeGridSort(self, row):
+        for i in range(self.input_text.getTextLength()+1):
+            # print("Sort: Remove Row " + str(row) + " Remove Column " + str(i))
+            entry = self.mainContentLeftViewGridSort.itemAtPosition(row, i)
+            if(entry != None):
+                # print(isinstance(entry.widget(), QLabel))
+                entry.widget().deleteLater()
+
+
+    def setColorAtRotationGridIndex(self, row, color):
+        for i in range(self.input_text.getTextLength()+1):
+            entry = self.mainContentLeftViewGridRotation.itemAtPosition(row, i)
+            if entry != None:
+                widget = entry.widget()
+                styleSheet = r"color: " + str(color) + ";"
+                widget.setStyleSheet(styleSheet)
 
 
     def toggleAutorun(self):
         if(self.auto_checkbox.isChecked()):
-            self.button_next.setDisabled(True)
-            self.button_prev.setDisabled(True)
-            print("Autorun On")
+            #self.button_next.setDisabled(True)
+            #self.button_prev.setDisabled(True)
+            #print("Autorun On")
             self.autorun()
         if(self.auto_checkbox.isChecked()):
-            self.button_next.setDisabled(False)
-            self.button_prev.setDisabled(False)
+            #self.button_next.setDisabled(False)
+            #self.button_prev.setDisabled(False)
             print("Autorun Off")
 
 
@@ -398,3 +529,4 @@ class Gui(QMainWindow):
 
     def setState(self, state):
         self.state = state
+        print("Set State: " + str(state))
