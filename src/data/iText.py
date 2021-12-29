@@ -29,6 +29,8 @@ class TextTable:
     def __init__(self):
         self.table = []
         self.sortedTable = []
+        self.sorted_ref_dict = {}
+
 
     def addText(self, text):
         self.table.append(text)
@@ -36,8 +38,18 @@ class TextTable:
     def getTextAtIndex(self, index):
         return self.table[index]
 
+    def removeTextAtIndex(self, index):
+        del self.table[index]
+
+    def getLastText(self):
+        return self.table[-1]
+
     def sortTable(self):
-        self.sortedTable = self.table.copy()
+        self.sortedTable = sorted(self.table.copy())
+        for entry in self.table:
+            index_sorted = self.sortedTable.index(entry)
+            index_rotation = self.table.index(entry)
+            self.sorted_ref_dict[index_rotation] = index_sorted
 
     def getSortedTextAtIndex(self, index):
         return self.sortedTable[index]
@@ -45,8 +57,20 @@ class TextTable:
     def getTextList(self):
         return self.table
 
+
+    def getRef(self, index):
+        return self.sorted_ref_dict[index]
+
     def getTableLength(self):
         return len(self.table)
 
+
     def printTable(self):
         print(self.table)
+
+    def printSortRefDict(self):
+        for key in self.sorted_ref_dict.keys():
+            print("Key: " + str(key) + " | Value: " + str(self.sorted_ref_dict[key]))
+
+    def printSortedTable(self):
+        print(self.sortedTable)
