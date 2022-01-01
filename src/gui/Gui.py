@@ -203,8 +203,11 @@ class Gui(QMainWindow):
         self.f_mainContentRight.addLayout(self.f_mainContentRightView)
         self.f_mainContentRight.addStretch()
 
+        self.f_mainFrameContent.addStretch()
         self.f_mainFrameContent.addLayout(self.f_mainContentLeft)
+        self.f_mainFrameContent.addStretch()
         self.f_mainFrameContent.addLayout(self.f_mainContentRight)
+        self.f_mainFrameContent.addStretch()
 
         self.step_label = QLabel("1.) Rotation")
         self.step_label.setStyleSheet("border: 1px solid black;")
@@ -232,7 +235,6 @@ class Gui(QMainWindow):
         self.f_mainContentLeftView.addStretch()
 
         self.mainContentLeftViewGridSort = QGridLayout()
-        self.mainContentLeftViewGridSort.setAlignment(Qt.AlignTop)
         self.f_mainContentLeftView.addLayout(self.mainContentLeftViewGridSort)
 
         self.mainContentRightViewEncoded = QHBoxLayout()
@@ -263,7 +265,7 @@ class Gui(QMainWindow):
         #self.description_label_wrapper.addStretch()
         #self.description_label_wrapper.addWidget(description_label)
         #self.mainContentRightViewDescription.addLayout(self.description_label_wrapper)
-        self.mainContentRightViewDescription.addWidget(description_label)
+        #self.mainContentRightViewDescription.addWidget(description_label)
 
         self.description = QLabel("")
         self.description.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
