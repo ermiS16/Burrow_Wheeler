@@ -4,6 +4,8 @@ def rotateText(text):
     text = tmp + text
     return text
 
+def getLastChar(text):
+    return text[-1]
 
 class Text:
     def __init__(self, text):
@@ -41,15 +43,21 @@ class TextTable:
     def removeTextAtIndex(self, index):
         del self.table[index]
 
+    def removeLastText(self):
+        del self.table[-1]
+
     def getLastText(self):
         return self.table[-1]
 
     def sortTable(self):
         self.sortedTable = sorted(self.table.copy())
+        # self.printSortedTable()
+        # self.printTable()
         for entry in self.table:
             index_sorted = self.sortedTable.index(entry)
             index_rotation = self.table.index(entry)
-            self.sorted_ref_dict[index_rotation] = index_sorted
+            self.sorted_ref_dict[index_sorted] = index_rotation
+        self.printSortRefDict()
 
     def getSortedTextAtIndex(self, index):
         return self.sortedTable[index]
