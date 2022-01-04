@@ -72,6 +72,12 @@ class TextTable:
     def getTableLength(self):
         return len(self.table)
 
+    def getTextTable(self):
+        return self.table
+
+    def getSortedTable(self):
+        return self.table
+
 
     def printTable(self):
         print(self.table)
