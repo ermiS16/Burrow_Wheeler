@@ -1,3 +1,4 @@
+import functools
 import re
 import sys
 import time
@@ -8,9 +9,9 @@ import PyQt5
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QMainWindow, QPushButton, QLineEdit, QHBoxLayout, \
     QVBoxLayout, QBoxLayout, QAction, QComboBox, QScrollArea, QSizePolicy, QCheckBox, QGridLayout, QFormLayout, \
     QStackedLayout, QLayout, QSlider
-from PyQt5.QtGui import QFont, QColor, QTextFormat, QRegExpValidator, QIntValidator, QCursor
+from PyQt5.QtGui import QFont, QColor, QTextFormat, QRegExpValidator, QIntValidator, QCursor, QPalette
 from PyQt5.QtCore import Qt, QSize, QRect, QRegExp, QPropertyAnimation, QPoint, QSequentialAnimationGroup, QEasingCurve, \
-    QParallelAnimationGroup
+    QParallelAnimationGroup, QEvent, pyqtProperty, QVariantAnimation, QAbstractAnimation
 
 
 class STATE(Enum):
@@ -20,20 +21,38 @@ class STATE(Enum):
     F_ROTATION = 3
     F_SORT = 4
     F_ENCODE = 5
-    F_INDEX = 6
-    F_END = 7
+    F_INDEX_SHOW = 6
+    F_INDEX_SELECT = 7
+    F_END = 8
+
+
+class CustomLabel(QLabel):
+    def __init__(self, text):
+        super().__init__(text)
+
+    def _set_color(self, col):
+        palette = self.palette()
+        palette.setColor(self.foregroundRole(), col)
+        self.setPalette(palette)
+
+    color = pyqtProperty(QColor, fset=_set_color)
 
 class Gui_Test(QMainWindow):
 
     def __init__(self):
         super().__init__()
         self.mainFrameWidget = QWidget(self)
+
         self.directions = ['Richtung Auswählen', 'Vorwärts', 'Rückwärts']
         self.textTableLast = []
 
         self.table = []
+        self.table_y = []
         self.tableSort = []
         self.tableEncode = []
+        self.tableIndex = []
+
+        self.index = None
 
         self.tableLast = []
         self.textTable = iText.TextTable()
@@ -48,30 +67,59 @@ class Gui_Test(QMainWindow):
 
     def initUI(self):
 
+
         self.screen_resolution = self.screen().geometry()
         self.screen_width, self.screen_height = self.screen_resolution.width(), self.screen_resolution.height()
         print (str(self.screen_width) + ", " + str(self.screen_height))
-        self.window_width = round(self.screen_width * 0.5)
+        self.window_width = round(self.screen_width * 0.6)
         self.window_height = round(self.screen_height * 0.6)
 
-        self.setGeometry(10, 10, self.window_width, self.window_height)
+        self.labelWidth = round(self.screen_width/100)
+        self.labelheight = self.labelWidth
+        self.labelMargin = round(self.screen_width / 120)
+
+        self.labelStyle = r"background-color:red; color:white;"
+        self.labelStyleCopyInit = "background-color:orange; color.white;"
+        self.labelStyleMarked = r"background-color:orange; color:white;"
+        self.labelStyleSelected = r"background-color:green; color:white;"
+        self.indexStyleMarked = r"backgroud-color:gray; color:black;"
+        self.indexStyleSelected = r"backgroud-color:green; color:white;"
+
+        self.indexMargin = round(self.screen_width / 50)
+        self.tableMargin = round(self.screen_width / 4.5)
+
+        #Position the main window in the center of the screen
+        self.main_window_x_start = round(self.screen_width/2) - round(self.window_width/2)
+        self.main_window_y_start = round(self.screen_height/2) - round(self.window_height/2)
+
+        self.setGeometry(self.main_window_x_start, self.main_window_y_start, self.window_width, self.window_height)
+        self.setFixedSize(self.window_width, self.window_height)
         self.setWindowTitle("Test Gui")
         self.createMenu()
+
         self.menu_bar_offset = self.menuBar().geometry().height()
-        x_start = 0
         y_offset = 0 + self.menu_bar_offset
+
+        y_start = 0 + self.menu_bar_offset
+        x_start = round(self.window_width / 50)  # space to left window edge (1920/50 ~ 40)
+
+        self.button_width = 100
+        self.button_height = 30
+        self.button_margin = round(self.screen_width / 120)
+        self.button_margin_bottom = self.button_height + round(self.screen_width / 120)
 
         self.next_button = QPushButton(self)
         self.next_button.setText("Next")
-        self.next_button.move(x_start, y_offset)
+        self.next_button.move(x_start, y_start)
         self.next_button.clicked.connect(self.nextStep)
+        self.next_button.setParent(self.mainFrameWidget)
 
-
-        prev_button = QPushButton(self)
-        prev_button.setText("Prev")
-        prev_x_start = self.next_button.geometry().width() + 5
-        prev_button.move(prev_x_start, y_offset)
-        prev_button.clicked.connect(self.stepBack)
+        self.prev_button = QPushButton(self)
+        self.prev_button.setText("Prev")
+        prev_x_start = x_start + self.button_width + self.button_margin
+        self.prev_button.move(prev_x_start, y_start)
+        self.prev_button.clicked.connect(self.stepBack)
+        self.prev_button.setParent(self.mainFrameWidget)
 
         self.speed_slider = QSlider(Qt.Horizontal, self)
         self.speed_slider.setMinimum(1)
@@ -80,51 +128,55 @@ class Gui_Test(QMainWindow):
         self.speed_slider.setValue(7)
         self.speed_slider.setTickInterval(1)
         self.speed_slider.setTickPosition(QSlider.TicksBelow)
-        slider_x_start = (self.next_button.geometry().width() + 150)
+        slider_x_start = x_start + (self.button_width*2) + (self.button_margin*2)
         slider_y_start = y_offset
-        self.speed_slider.setGeometry(QRect(slider_x_start, slider_y_start, self.speed_slider.geometry().width()+50, self.speed_slider.geometry().height()+5))
+        slider_width = round(self.screen_width / (self.screen_width/200))
+        self.speed_slider.setGeometry(QRect(slider_x_start, slider_y_start, slider_width, self.speed_slider.geometry().height()+5))
         self.speed_slider.valueChanged.connect(self.updateSpeed)
-        #self.speed_slider.show()
+        self.speed_slider.setParent(self.mainFrameWidget)
 
-        # print_button = QPushButton(self)
-        # print_button.setText("Print")
-        # print_y_start = y_offset
-        # print_x_start = (self.next_button.geometry().width()*2) + 10
-        # print_button.move(print_x_start, y_offset)
-        # print_button.clicked.connect(self.printTable)
 
-        button_margin_bottom = self.next_button.geometry().height() + 5
         button_height = self.next_button.geometry().height()
 
         row = []
         text = ""
         print("i x_start")
-        input = "Wikipedia!"
-        self.textTable.addText(input)
-        self._MAX_STEPS = len(input)
+        self.input_text = "Wikipedia!"
+        self.textTable.addText(self.input_text)
+        self._MAX_STEPS = len(self.input_text)
         elemCount = 0
-        for ch in input:
+        for ch in self.input_text:
             label = QLabel(self)
             label.setAlignment(Qt.AlignCenter)
             label.setText(str(ch))
             text = text + str(ch)
-            label.setStyleSheet("background-color:red; color:white;")
-            y_start = y_offset + label.geometry().height() + button_margin_bottom
-            label.setGeometry(QRect(0, 0, 20, 20))
+            label.setStyleSheet(self.labelStyle)
+            #label.setStyleSheet("background-color:red; color:white;")
+            y_start = y_offset + self.labelheight + self.button_margin_bottom
+            label.resize(self.labelWidth, self.labelheight)
+            # label.setGeometry(QRect(0, 0, self.labelWidth, self.labelheight))
 
             if elemCount == 0:
-                x_start = 0
+                x_start = round(self.window_width/50)  # space to left window edge (1920/50 ~ 40)
             else:
-                x_start = x_start + label.geometry().width() + 5
+                x_start = x_start + self.labelWidth + self.labelMargin
 
-            label.setGeometry(QRect(x_start, y_start, 20, 20))
+            label.move(x_start, y_start)
+            label.setParent(self.mainFrameWidget)
+            #print(label.palette().window().color().name())
+            # label.setGeometry(QRect(x_start, y_start, 20, 20))
+            self.table_y.append(y_start)
             # print(str(ch), str(x_start), str(label.width()))
             #label.move(x_start, 50)
             row.append(label)
             elemCount = elemCount + 1
 
         self.table.append(row)
+
+
+        self.setCentralWidget(self.mainFrameWidget)
         self.show()
+
 
     def updateSpeed(self):
         print("New Speed: " + str(self.speed_slider.value()))
@@ -151,6 +203,7 @@ class Gui_Test(QMainWindow):
                 self.step = 0
             else:
                 self.rotate()
+                #self.setLabelStyle(self.table[self.step], self.labelStyle)
                 self.textTable.printTable()
 
         if(self.state == STATE.F_SORT):
@@ -165,7 +218,72 @@ class Gui_Test(QMainWindow):
 
         if(self.state == STATE.F_ENCODE):
             self.printState()
-            self.selectLastChar(self.step)
+
+            if self.step == self._MAX_STEPS:
+                self.state = STATE.F_INDEX_SHOW
+                self.step = 0
+            else:
+                self.selectLastChar(self.step)
+
+        if(self.state == STATE.F_INDEX_SHOW):
+            self.printState()
+
+            if(self.step == self._MAX_STEPS):
+                self.state = STATE.F_INDEX_SELECT
+                self.step = 0
+            else:
+                self.showIndex(self.step)
+
+        if(self.state == STATE.F_INDEX_SELECT):
+            self.printState()
+            if(self.textTable.getSortedTextAtIndex(self.step) == self.input_text):
+                self.state = STATE.F_END
+
+            elif not self.index == None:
+                self.state = STATE.F_END
+
+            else:
+                self.selectIndex(self.step)
+
+        if(self.state == STATE.F_END):
+            pass
+
+    def selectIndexFinal(self, row):
+        pass
+
+    def selectIndex(self, row):
+
+        for i in range(len(self.tableSort)):
+            for label in self.tableSort[i]:
+                if(i == row):
+                    self.animateBackgroundColor(label, QColor("red"), QColor("blue"), duration=100)
+                else:
+                    #self.setLabelStyle(label, self.labelStyle)
+                    self.animateBackgroundColor(label, QColor("red"), QColor("red"), duration=100)
+
+
+
+    def showIndex(self, row):
+        table = self.tableSort[row]
+        firstLabel = table[0]
+        entry_y = firstLabel.geometry().y()
+        entry_x = firstLabel.geometry().x()
+
+        indexLabel_x = entry_x - self.indexMargin
+        indexLabel = QLabel(self)
+        labelText = str(row+1) + ".)"
+        indexLabel.setText(labelText)
+        indexLabel.setGeometry(QRect(indexLabel_x, entry_y, 0, 0))
+        indexLabel.setAlignment(Qt.AlignCenter)
+        indexLabel.setParent(self.mainFrameWidget)
+        indexLabel.show()
+
+        anim = QPropertyAnimation(indexLabel, b"geometry", self)
+        anim.setEndValue(QRect(indexLabel.geometry().x(), indexLabel.geometry().y(), indexLabel.sizeHint().width(), indexLabel.sizeHint().height()))
+        speed = int(500*self.speedFactor)
+        anim.setDuration(speed)
+        anim.start()
+
 
     def selectLastChar(self, row_index):
         table = self.tableSort[row_index]
@@ -176,8 +294,9 @@ class Gui_Test(QMainWindow):
         #print("Set Text: " + str(lastLabel.text()))
         lastChar.setText(lastLabel.text())
         lastChar.setStyleSheet("background-color:red; color: white;")
-        lastChar.resize(lastLabel.geometry().width(), lastLabel.geometry().height())
+        lastChar.resize(self.labelWidth, self.labelheight)
         lastChar.move(lastLabel.geometry().x(), lastLabel.geometry().y())
+        lastChar.setParent(self.mainFrameWidget)
         lastChar.show()
         print(str(lastLabel.geometry().x()), str(lastLabel.geometry().y()))
 
@@ -186,16 +305,36 @@ class Gui_Test(QMainWindow):
         labelHalf = tableEntryHalf[0]
 
         labelHalf_y = labelHalf.geometry().y()
-        lastChar_x_end = lastChar.geometry().x() + 100 + (self.step * (lastChar.geometry().width() + 5))
+        lastChar_x_end = lastChar.geometry().x() + 150 + (self.step * (lastChar.geometry().width() + 5))
         print(str(lastChar_x_end), str(labelHalf_y))
-
         #anim_group = QSequentialAnimationGroup(self)
-        anim = QPropertyAnimation(lastChar, b"pos", self)
-        anim.setEndValue(QPoint(lastChar_x_end, labelHalf_y))
-        speed = int(300*self.speedFactor)
+
+        anim_group = QSequentialAnimationGroup(self)
+
+        anim = QPropertyAnimation(lastChar, b"geometry", self)
+        anim.setEndValue(QRect(lastChar.geometry().x(), lastChar.geometry().y(), (lastChar.geometry().width()*1.3), (lastChar.geometry().height()*1.3)))
+        speed = int(self.speedFactor * 50)
         anim.setDuration(speed)
 
+        anim_group.addAnimation(anim)
+
+        anim = QPropertyAnimation(lastChar, b"geometry", self)
+        anim.setEndValue(QRect(lastChar.geometry().x(), lastChar.geometry().y(), self.labelWidth, self.labelheight))
+        speed = int(self.speedFactor * 50)
+        anim.setDuration(speed)
+
+        anim_group.addAnimation(anim)
+
+        anim = QPropertyAnimation(lastChar, b"pos", self)
+        anim.setEndValue(QPoint(lastChar_x_end, labelHalf_y))
+        speed = int(1500*self.speedFactor)
+        anim.setDuration(speed)
         anim.start()
+
+        anim_group.addAnimation(anim)
+        anim_group.start()
+
+        self.animateBackgroundColor(lastChar, QColor("orange"), QColor("red"), duration=5000)
 
         self.tableEncode.append(lastChar)
 
@@ -210,8 +349,9 @@ class Gui_Test(QMainWindow):
             labelCopy.setAlignment(Qt.AlignCenter)
             labelCopy.setText(str(label.text()))
             labelCopy.setStyleSheet("background-color:red; color:white;")
-            labelCopy.resize(label.geometry().width(), label.geometry().height())
+            labelCopy.resize(self.labelWidth, self.labelheight)
             labelCopy.move(label.geometry().x(), label.geometry().y())
+            labelCopy.setParent(self.mainFrameWidget)
             labelCopy.show()
             copyTable.append(labelCopy)
 
@@ -222,7 +362,7 @@ class Gui_Test(QMainWindow):
         for label in copyTable:
             x_start = label.geometry().x()
             # y_start = label.geometry().y()
-            x_end = x_start + 300
+            x_end = x_start + self.tableMargin
             anim = QPropertyAnimation(label, b"pos")
             anim.setEndValue(QPoint(x_end, y_start))
             speed = int(300*self.speedFactor)
@@ -230,6 +370,10 @@ class Gui_Test(QMainWindow):
             anim_group.addAnimation(anim)
 
         anim_group.start()
+
+        for label in copyTable:
+            self.animateBackgroundColor(label, QColor("orange"), QColor("red"), duration=2500)
+
         self.tableSort.append(copyTable)
 
     def rotate(self):
@@ -239,11 +383,14 @@ class Gui_Test(QMainWindow):
         table = self.table[-1]
         for label in table:
             labelCopy = QLabel(self)
+            labelCopy = CustomLabel(self)
             labelCopy.setAlignment(Qt.AlignCenter)
             labelCopy.setText(str(label.text()))
-            labelCopy.setStyleSheet("background-color:red; color:white;")
-            labelCopy.resize(label.geometry().width(), label.geometry().height())
+            labelCopy.setStyleSheet(self.labelStyleCopyInit)
+            labelCopy.resize(self.labelWidth, self.labelheight)
             labelCopy.move(label.geometry().x(), label.geometry().y())
+            labelCopy.setParent(self.mainFrameWidget)
+            #print(labelCopy.palette().window().color().name())
             labelCopy.show()
             copyTable.append(labelCopy)
 
@@ -252,6 +399,7 @@ class Gui_Test(QMainWindow):
             x_start = label.geometry().x()
             y_start = label.geometry().y()
             y_end = y_start + 50
+            self.table_y.append(y_end)
             # print(str(x_start), str(y_start))
             anim = QPropertyAnimation(label, b"pos")
             anim.setEasingCurve(QEasingCurve.OutBounce)
@@ -293,8 +441,15 @@ class Gui_Test(QMainWindow):
         speed = int(400 * self.speedFactor)
         anim.setDuration(speed)
         anim_group.addAnimation(anim)
-
         anim_group.start()
+
+        for label in copyTable:
+            self.animateBackgroundColor(label, QColor("orange"), QColor("red"), duration=2500)
+        #     anim = QPropertyAnimation(label, b"color")
+        #     anim.setEndValue(QColor(255, 0, 0))
+        #     anim.setDuration(50)
+        #     anim_group.addAnimation(anim)
+
 
         self.tableLast = copyTable.copy()
         tableRotated = self.rotateTable(copyTable)
@@ -303,6 +458,18 @@ class Gui_Test(QMainWindow):
         text_rotate = iText.rotateText(self.textTable.getLastText())
         self.textTable.addText(text_rotate)
 
+    def animateBackgroundColor(self, widget, start_color, end_color, duration=1000):
+        duration = int(duration*self.speedFactor)
+        anim = QVariantAnimation(widget, duration=duration, startValue=start_color, endValue=end_color, loopCount=1)
+        anim.valueChanged.connect(functools.partial(self.setLabelBackground, widget))
+        anim.start(QAbstractAnimation.DeleteWhenStopped)
+
+    def setLabelBackground(self, widget, color):
+        widget.setStyleSheet("background-color: {}; color: white;".format(color.name()))
+
+    def setLabelStyle(self, table, style):
+        for label in table:
+            label.setStyleSheet(style)
 
     def stepBack(self):
 
@@ -372,10 +539,10 @@ class Gui_Test(QMainWindow):
         exit_act.setShortcut('Ctrl+Q')
         exit_act.triggered.connect(self.close)
 
+
+
         menu_bar = self.menuBar()
         menu_bar.setNativeMenuBar(False)
-        height = self.menuBar().geometry().height()
-        print("Menu Bar Height: " + str(height))
 
         file_menu = menu_bar.addMenu('File')
         file_menu.addAction(exit_act)
@@ -387,6 +554,8 @@ class Gui_Test(QMainWindow):
         print("Step: " + str(self.step))
 
 
+    def switchAlgo(self):
+        pass
 
 app = QApplication(sys.argv)
 window = Gui_Test()
