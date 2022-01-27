@@ -1,22 +1,24 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Desctiptions>
     <forward_rotation>
-        Der Text wird rotiert. Die Richtung der Rotation ist nicht relevant,
-        muss für den gesamten Vorgang jedoch gleich bleiben.
+        Rotation: Im ersten Schritt wird das Eingabewort rotiert und die einzelnen Rotationen in einer Tabelle gespeichert.
     </forward_rotation>
     <forward_sort>
-        Die Einträge in der Tabelle werden alphabetisch mit einem stabilen Sortierverfahren neu geordnet.
-        Ein stabiles Verfahren verändert die Reihenfolge bei gleichheit nicht.
-        Damit bleibt die ursprüngliche Reihenfolge erhalten.
+        Sortieren: Die Einträge in der Tabelle werden alphabetisch mit einem stabilen Sortierverfahren neu geordnet.
+         Ein stabiles Verfahren verändert die Reihenfolge bei Gleichheit nicht.
+         Damit bleibt die ursprüngliche Reihenfolge erhalten.
+
     </forward_sort>
     <forward_encode>
-        Von den sortierten Einträgen werden die jeweils letzten Zeichen "gesammelt". Daraus entsteht dann
-        das transformierte Word.
+        Encodieren: Von den sortierten Einträgen werden die jeweils letzten Zeichen "gesammelt". Daraus entsteht dann
+        das transformierte Wort.
     </forward_encode>
     <forward_index>
-        Der Index ist die Position, die das Original-Wort in der sortierten Tabelle einnimmt.
+        Index: Der Index ist die Position, die das Original-Wort in der sortierten Tabelle einnimmt. Er wird durch
+         einen vergleich des Original-Wortes mit den einzelnen Einträgen der sortierten Tabelle bestimmt.
     </forward_index>
     <forward_end>
-        Die Transformation ist abgeschlossen.
+        Ende: Die Transformation ist abgeschlossen. Das Eingabewort ist transformiert und der Index des Eingabeworts
+         ist bestimmt.
     </forward_end>
 </Desctiptions>
