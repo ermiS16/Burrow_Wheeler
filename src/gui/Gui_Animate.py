@@ -1,11 +1,16 @@
 import functools
-import re
 import sys
 import time
-import xml.etree.ElementTree as ET
+
 from data import iText
-from enum import Enum
-import PyQt5
+from logic import Utils, Forward
+from logic.Description import DESC, Description
+from logic.State import STATE, State
+from gui.ControlPanel import ControlPanel, ElemKeys
+from gui.Window import Window
+import gui.Style as sty
+from gui.Style import Style
+
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QMainWindow, QPushButton, QLineEdit, QHBoxLayout, \
     QVBoxLayout, QBoxLayout, QAction, QComboBox, QScrollArea, QSizePolicy, QCheckBox, QGridLayout, QFormLayout, \
     QStackedLayout, QLayout, QSlider
@@ -13,25 +18,6 @@ from PyQt5.QtGui import QFont, QColor, QTextFormat, QRegExpValidator, QIntValida
 from PyQt5.QtCore import Qt, QSize, QRect, QRegExp, QPropertyAnimation, QPoint, QSequentialAnimationGroup, QEasingCurve, \
     QParallelAnimationGroup, QEvent, pyqtProperty, QVariantAnimation, QAbstractAnimation
 
-
-class STATE(Enum):
-    INIT = 0
-    INIT_FORWARD = 1
-    INIT_BACKWARD = 2
-    F_ROTATION = 3
-    F_SORT = 4
-    F_ENCODE = 5
-    F_INDEX_SHOW = 6
-    F_INDEX_SELECT = 7
-    F_INDEX_FINAL = 8
-    F_END = 9
-
-class DESC(Enum):
-    forward_rotation = "forward_rotation"
-    forward_sort = "forward_sort"
-    forward_encode = "forward_encode"
-    forward_index = "forward_index"
-    forward_end = "forward_end"
 
 
 class CustomLabel(QLabel):
@@ -51,6 +37,9 @@ class Gui_Test(QMainWindow):
         super().__init__()
         self.mainFrameWidget = QWidget(self)
 
+        self.utils_table = Utils.Table()
+        self.utils_btn = Utils.Button()
+        self.utils_label = Utils.Label()
         self.directions = ['Richtung Auswählen', 'Vorwärts', 'Rückwärts']
         self.textTableLast = []
 
@@ -61,10 +50,10 @@ class Gui_Test(QMainWindow):
         self.tableIndex = []
         self.tableFinalIndex = []
         self.resultLabel = {'encode': None, 'index': None}
+
         self.descriptions = {}
         self.description = None
-        self.directions = ['Richtung Auswählen', 'Vorwärts', 'Rückwärts']
-
+        self.controlBtnList = []
         self.tableLast = []
         self.textTable = None
         self.sortedTextTable = []
@@ -72,114 +61,31 @@ class Gui_Test(QMainWindow):
         self.encodeTable = []
         self.step = 0
         self.speedFactor = 1
-        self.state = STATE.F_ROTATION
+        self.state = State(STATE.INIT)
         self.initUI()
 
     def resetWindow(self):
         childs = self.mainFrameWidget.children()
         print(str(childs))
         for child in childs:
-            child.deleteLater()
+            if child.objectName() != 'ControlPanel':
+                child.deleteLater()
 
     def initWindow(self):
-        self.screen_resolution = self.screen().geometry()
-        self.screen_width, self.screen_height = self.screen_resolution.width(), self.screen_resolution.height()
-        print (str(self.screen_width) + ", " + str(self.screen_height))
-        self.window_width = self.screen_width
-        #self.window_width = round(self.screen_width * 0.7)
-        self.window_height = self.screen_height
-        #self.window_height = round(self.screen_height * 0.6)
+        self.win = Window(self.screen())
+        self.window_width = self.win.getWindowWidth()
+        self.window_height = self.win.getWindowHeight()
+        self.screen_width = self.win.getScreenWidth()
+        self.screen_height = self.win.getScreenHeight()
         self.menu_bar_offset = self.menuBar().geometry().height()
 
+        self.main_window_x_start = round(self.screen_width/2) - round(self.window_width/2)
+        self.main_window_y_start = round(self.screen_height/2) - round(self.window_height/2)
 
-    def initControlPanel(self):
-        self.controlPanel = QWidget(self)
-        self.control_panel_width = self.window_width
-        self.control_panel_height = round(self.window_height * 0.1)
-        self.control_panel_y_offset = self.menu_bar_offset + self.control_panel_height
+        self.setGeometry(self.main_window_x_start, self.main_window_y_start, self.window_width, self.window_height)
+        self.setFixedSize(self.window_width, self.window_height)
+        self.setWindowTitle("Burrows-Wheeler Transformation")
 
-        self.y_offset = 0 + self.menu_bar_offset
-
-        self.y_start = 0 + self.menu_bar_offset
-        x_start = round(self.window_width / 50)  # space to left window edge (1920/50 ~ 40)
-
-        self.button_width = 100
-        self.button_height = 30
-        self.button_margin = round(self.screen_width / 120)
-        self.button_margin_bottom = self.button_height + round(self.screen_width / 120)
-
-        self.input_field_label = QLabel(self)
-        self.input_field_label.setText("Eingabewort:")
-        self.input_field_label.move(x_start, self.y_start)
-        self.input_field_label.setParent(self.mainFrameWidget)
-        self.input_field_label.show()
-        input_field_label_length = self.input_field_label.geometry().width()
-
-        self.input_field = QLineEdit(self)
-        self.input_field_width = self.input_field.geometry().width()
-        input_field_x_start = input_field_label_length + (self.button_margin*2)
-        self.input_field.move(input_field_x_start, self.y_start)
-        input_text_regex = QRegExp(".{2,15}")
-        input_text_validator = QRegExpValidator(input_text_regex)
-        self.input_field.setValidator(input_text_validator)
-        self.input_field.setPlaceholderText("Input")
-        self.input_field.setText("Wikipedia!")
-        self.input_field.setParent(self.mainFrameWidget)
-        self.input_field.show()
-
-        self.transform_button_x_start = self.input_field_width + (self.button_width) + (self.button_margin*4)
-        self.transform_button = QPushButton(self)
-        self.transform_button.setText("Transformiere")
-        self.transform_button.move(self.transform_button_x_start, self.y_start)
-        self.transform_button.clicked.connect(self.initForward)
-        self.transform_button.setParent(self.mainFrameWidget)
-
-        self.next_button = QPushButton(self)
-        self.next_button.setText("Next")
-        self.next_button.setEnabled(False)
-        next_button_x_start = x_start + (self.button_width*3) + (self.button_margin*3)
-        self.next_button.move(next_button_x_start, self.y_start)
-        self.next_button.clicked.connect(self.nextStep)
-        self.next_button.setParent(self.mainFrameWidget)
-
-        self.prev_button = QPushButton(self)
-        self.prev_button.setText("Prev")
-        self.prev_button.setEnabled(False)
-        prev_x_start = x_start + (self.button_width*4) + (self.button_margin*4)
-        self.prev_button.move(prev_x_start, self.y_start)
-        self.prev_button.clicked.connect(self.stepBack)
-        self.prev_button.setParent(self.mainFrameWidget)
-
-        self.reset_button = QPushButton(self)
-        self.reset_button.setText("Reset")
-        self.reset_button.setEnabled(True)
-        reset_x_start = x_start + (self.button_width*5) + (self.button_margin*5)
-        self.reset_button.move(reset_x_start, self.y_start)
-        self.reset_button.clicked.connect(self.resetWindow)
-        self.reset_button.setParent(self.mainFrameWidget)
-
-        self.speed_slider = QSlider(Qt.Horizontal, self)
-        self.speed_slider.setMinimum(1)
-        self.speed_slider.setMaximum(14)
-        self.speed_slider.setSingleStep(1)
-        self.speed_slider.setValue(7)
-        self.speed_slider.setTickInterval(1)
-        self.speed_slider.setTickPosition(QSlider.TicksBelow)
-        slider_x_start = x_start + (self.button_width*6) + (self.button_margin*6)
-        slider_y_start = self.y_offset
-        slider_width = round(self.screen_width / (self.screen_width/200))
-        self.speed_slider.setGeometry(QRect(slider_x_start, slider_y_start, slider_width, self.speed_slider.geometry().height()+5))
-        self.speed_slider.valueChanged.connect(self.updateSpeed)
-        self.speed_slider.setParent(self.mainFrameWidget)
-
-        self.mainFrameControlDirection = QComboBox()
-        self.mainFrameControlDirection.addItems(self.directions)
-        self.mainFrameControlDirection.currentTextChanged.connect(self.switchPage)
-        direction_x_start = x_start + (self.button_width*6) + (self.button_margin*6)
-        self.mainFrameControlDirection.move(direction_x_start, self.y_start)
-        self.mainFrameControlDirection.setParent(self.mainFrameWidget)
-
-        self.setCentralWidget(self.mainFrameWidget)
 
     def switchPage(self):
         currentDirectionIndex = self.mainFrameControlDirection.currentIndex()
@@ -191,18 +97,11 @@ class Gui_Test(QMainWindow):
             self.showDeltaInput(False)
 
 
-    def loadDescriptions(self):
-        tree = ET.parse("/home/eric/Dokumente/Repositories/hska/Burrow_Wheeler/src/data/Descriptions.xml")
-        xml_root = tree.getroot()
-        for child in xml_root:
-            desc = child.text
-            self.descriptions[child.tag] = desc.strip()
 
-
-    def initContentLayout(self):
+    def initForwardLayout(self):
         self.margin_window_left = round(self.window_width * 0.025)
         self.margin_window_right = round(self.window_width * 0.025)
-        self.margin_window_top = self.control_panel_y_offset
+        self.margin_window_top = self.controlPanel.getHeight()
         self.margin_window_bottom = round(self.window_height * 0.05)
         self.margin_between_boxes = self.window_width * 0.025
 
@@ -241,22 +140,25 @@ class Gui_Test(QMainWindow):
 
     def initUI(self):
         self.initWindow()
-        self.initControlPanel()
-        self.initContentLayout()
-        self.loadDescriptions()
+        #self.initControlPanel()
+        self.controlPanel = ControlPanel(self)
+        self.controlPanel.setWidth(self.win.getWindowWidth())
+        self.controlPanel.setHeight((self.win.getWindowHeight()*0.1))
+        self.controlPanel.setX(50)
+        self.controlPanel.setY(self.menu_bar_offset)
+
+        self.initForwardLayout()
+        self.controlPanel.connectBtnOnClick(ElemKeys.transform_button, self.initForward)
+        self.controlPanel.connectBtnOnClick(ElemKeys.next_button, self.nextStep)
+        self.controlPanel.connectBtnOnClick(ElemKeys.prev_button, self.stepBack)
+        self.controlPanel.connectBtnOnClick(ElemKeys.reset_button, self.resetWindow)
+        self.controlPanel.setParent(self.mainFrameWidget)
+        #self.loadDescriptions()
 
         self.labelWidth = round(self.screen_width/100)
         self.labelHeight = self.labelWidth
         self.labelMargin = round(self.screen_width / 120)
 
-        self.labelStyle = r"background-color:red; color:white;"
-        self.labelStyleCopyInit = "background-color:orange; color.white;"
-        self.labelStyleMarked = r"background-color:orange; color:white;"
-        self.labelStyleSelected = r"background-color:green; color:white;"
-        self.indexStyleMarked = r"backgroud-color:gray; color:black;"
-        self.indexStyleSelected = r"backgroud-color:green; color:white;"
-        self.labelDefaultStyle = r"background-color: #eff0f1; color:black;"
-        self.descriptionStyle = r"border: 1px solid black;"
 
         self.indexMargin = round(self.screen_width / 50)
         self.tableMargin = round(self.screen_width / 4.5)
@@ -264,41 +166,45 @@ class Gui_Test(QMainWindow):
         self.indexResultHeight = round(self.screen_width / 150)
 
         #Position the main window in the center of the screen
-        self.main_window_x_start = round(self.screen_width/2) - round(self.window_width/2)
-        self.main_window_y_start = round(self.screen_height/2) - round(self.window_height/2)
 
-        self.setGeometry(self.main_window_x_start, self.main_window_y_start, self.window_width, self.window_height)
-        self.setFixedSize(self.window_width, self.window_height)
-        self.setWindowTitle("Test Gui")
         self.createMenu()
+        self.setCentralWidget(self.mainFrameWidget)
         self.show()
 
     def initForward(self):
-        self.next_button.setEnabled(True)
-        self.prev_button.setEnabled(True)
-        self.resetTable(self.table)
+        #next_btn = self.controlPanel.getButton(ElemKeys.next_button)
+        next_btn = self.controlPanel.getElem(ElemKeys.next_button)
+        next_btn.setEnabled(True)
+        #self.next_button.setEnabled(True)
+        #self.prev_button.setEnabled(True)
+        #self.resetTable(self.table)
+        input_field = self.controlPanel.getElem(ElemKeys.input_field)
+        self.utils_table.resetTable(self.table)
         self.table = []
-        self.resetTable(self.tableSort)
+        self.utils_table.resetTable(self.tableSort)
+        #self.resetTable(self.tableSort)
         self.tableSort = []
         self.resetResultDirectory()
-        self.deleteLabelList(self.tableIndex)
-        self.deleteLabelList(self.tableEncode)
+        self.utils_table.deleteLabelList(self.tableIndex)
+        self.utils_table.deleteLabelList(self.tableEncode)
+        #self.deleteLabelList(self.tableIndex)
+        #self.deleteLabelList(self.tableEncode)
         self.tableIndex = []
         self.tableEncode = []
         self.textTable = iText.TextTable()
-        self.state = STATE.F_ROTATION
+        self.state.setState(STATE.F_ROTATION)
         self.index = None
         self.encode = ""
         row = []
         text = ""
-        print("i x_start")
-        self.input_text = self.input_field.text()
+        #print("i x_start")
+        self.input_text = input_field.text()
         self.textTable.addText(self.input_text)
         self._MAX_STEPS = len(self.input_text)
 
         self.labelWidth = round((self.left_box_width / len(self.input_text)) / 2)
-        self.labelLineMargin = round(((self.left_box_height / len(self.input_text)) / 2) * self.labelHeight)
-        print("Label Line Margin: ", self.labelLineMargin)
+        #self.labelLineMargin = round(((self.left_box_height / len(self.input_text)) / 2) * self.labelHeight)
+        #print("Label Line Margin: ", self.labelLineMargin)
 
         self.labelHeight = self.labelWidth
         self.labelMargin = round(self.labelWidth * 0.75)
@@ -310,16 +216,15 @@ class Gui_Test(QMainWindow):
         desc_start_y = self.right_box_y_start
         desc_height = (self.right_box_height * 0.25)
 
-
         if self.description != None:
             self.description.deleteLater()
 
-        self.description = QLabel(self)
+        self.description = Description(self)
         self.description.setAlignment(Qt.AlignTop)
         self.description.setWordWrap(True)
-        self.displayInfoText(DESC.forward_rotation.value)
+        self.description.setDescription(DESC.forward_rotation)
         self.description.setGeometry(QRect(desc_start_x, desc_start_y, desc_width, desc_height))
-        self.description.setStyleSheet(self.descriptionStyle)
+        self.description.setStyleSheet(sty.getStyle(Style.descriptionStyle))
         self.description.setParent(self.mainFrameWidget)
         self.description.show()
 
@@ -328,14 +233,14 @@ class Gui_Test(QMainWindow):
 
         elemCount = 0
         for ch in self.input_text:
-            print(ch)
+            #print(ch)
             label = QLabel(self)
             label.setAlignment(Qt.AlignCenter)
             label.setText(str(ch))
             text = text + str(ch)
-            label.setStyleSheet(self.labelStyle)
+            label.setStyleSheet(sty.getStyle(Style.labelStyle))
             #label.setStyleSheet("background-color:red; color:white;")
-            y_start = self.y_offset + self.labelHeight + self.button_margin_bottom
+            y_start = self.controlPanel.getHeight() + self.labelHeight + self.controlPanel.btnMarginBottom()
             y_start = self.left_box_y_start
             label.resize(self.labelWidth, self.labelHeight)
             # label.setGeometry(QRect(0, 0, self.labelWidth, self.labelheight))
@@ -347,7 +252,7 @@ class Gui_Test(QMainWindow):
                 x_start = x_start + self.labelWidth + self.labelMargin
 
             label.move(x_start, y_start)
-            print(str(x_start), str(y_start))
+            #print(str(x_start), str(y_start))
             label.setParent(self.mainFrameWidget)
             label.show()
             #print(label.palette().window().color().name())
@@ -370,102 +275,96 @@ class Gui_Test(QMainWindow):
             self.resultLabel.get('index').deleteLater()
             self.resultLabel['index'] = None
 
-    def resetTable(self, table):
-        if(len(table) > 0):
-            for i in range(len(table)):
-                self.deleteLabelList(table[i])
+    # def resetTable(self, table):
+    #     if(len(table) > 0):
+    #         for i in range(len(table)):
+    #             self.utils_table.deleteLabelList(table[i])
 
     def updateSpeed(self):
         print("New Speed: " + str(self.speed_slider.value()))
         self.speedFactor = ((self.speed_slider.value()/5)**-1)
         print("New Speedfactor: " + str(self.speedFactor))
 
-    def printTable(self, table):
-        content = "["
-        for label in table:
-            content = content + str(label.text()) + ", "
-
-        content = content + "]"
-        print(content)
+    # def printTable(self, table):
+    #     content = "["
+    #     for label in table:
+    #         content = content + str(label.text()) + ", "
+    #
+    #     content = content + "]"
+    #     print(content)
 
     def nextStep(self):
-        if self.step < self._MAX_STEPS and self.state != STATE.F_END:
+        if self.step < self._MAX_STEPS and self.state.getState() != STATE.F_END:
             self.step = self.step + 1
         self.printStep()
+        self.state.printState()
         self.printState()
 
-        if(self.state == STATE.F_ROTATION):
+        if(self.state.getState() == STATE.F_ROTATION):
             if self.step == self._MAX_STEPS:
-                self.state = STATE.F_SORT
+                self.state.setState(STATE.F_SORT)
                 self.step = 0
-                self.displayInfoText(DESC.forward_sort.value)
+                self.description.setDescription(DESC.forward_sort)
             else:
                 self.rotate()
                 #self.setLabelStyle(self.table[self.step], self.labelStyle)
                 self.textTable.printTable()
 
-        if(self.state == STATE.F_SORT):
-            self.printState()
+        if(self.state.getState() == STATE.F_SORT):
+            self.state.printState()
             if self.step == self._MAX_STEPS:
-                self.state = STATE.F_ENCODE
+                self.state.setState(STATE.F_ENCODE)
                 self.step = 0
-                self.displayInfoText(DESC.forward_encode.value)
+                self.description.setDescription(DESC.forward_encode)
             else:
                 self.textTable.sortTable()
                 row_index = self.textTable.getRef(self.step)
                 self.selectSortedRow(row_index)
 
-        if(self.state == STATE.F_ENCODE):
+        if(self.state.getState() == STATE.F_ENCODE):
             self.printState()
+            self.state.printState()
 
             if self.step == self._MAX_STEPS:
-                self.state = STATE.F_INDEX_SHOW
+                self.state.setState(STATE.F_INDEX_SHOW)
                 self.step = 0
-                self.displayInfoText(DESC.forward_index.value)
+                self.description.setDescription(DESC.forward_index)
             else:
                 self.selectLastChar(self.step)
 
-        if(self.state == STATE.F_INDEX_SHOW):
-            self.printState()
+        if(self.state.getState() == STATE.F_INDEX_SHOW):
+            self.state.printState()
             for i in range(self._MAX_STEPS+1):
                 if(i == self._MAX_STEPS):
-                    self.state = STATE.F_INDEX_SELECT
+                    self.state.setState(STATE.F_INDEX_SELECT)
                     self.step = 0
                 else:
                     self.showIndex(i)
 
-        if(self.state == STATE.F_INDEX_SELECT):
-            self.printState()
+        if(self.state.getState() == STATE.F_INDEX_SELECT):
+            self.state.printState()
 
             if(self.textTable.getSortedTextAtIndex(self.step) == self.input_text):
                 self.selectIndex(self.step, "next", QColor("red"), QColor("green"))
-                self.state = STATE.F_INDEX_FINAL
-                self.displayInfoText(DESC.forward_end.value)
+                self.state.setState(STATE.F_INDEX_FINAL)
+                self.description.setDescription(DESC.forward_end)
             else:
                 self.selectIndex(self.step, "next", QColor("red"), QColor("blue"))
 
-        if(self.state == STATE.F_INDEX_FINAL):
-            self.printState()
+        if(self.state.getState() == STATE.F_INDEX_FINAL):
+            self.state.printState()
             self.printStep()
             self.showFinalEncodeLabel()
             self.selectFinalIndexLabel(self.step)
-            self.state = STATE.F_END
+            self.state.setState(STATE.F_END)
 
-        if(self.state == STATE.F_END):
-            self.printState()
+        if(self.state.getState() == STATE.F_END):
+            self.state.printState()
             self.printStep()
 
 
-
-    def displayInfoText(self, type):
-        info = self.descriptions.get(type)
-        info = info.replace("\n", "")
-        info = info.replace("\t", "")
-        info = info.replace("  ", "")
-        print(info)
-        self.description.setText(info)
-
     def showFinalEncodeLabel(self):
+        #self.utils_btn.toggleButtons(self.controlBtnList)
         self.toggleButtons()
         encodeLabel = self.tableEncode[0]
         first_encode_elem_y = encodeLabel.geometry().y()
@@ -491,12 +390,13 @@ class Gui_Test(QMainWindow):
         anim.setDuration(speed)
         anim_group.addAnimation(anim)
         anim_group.finished.connect(self.toggleButtons)
+        #anim_group.finished.connect(self.utils_btn.toggleButtons(self.controlBtnList))
         anim_group.start()
         self.resultLabel['encode'] = encode
 
     def selectFinalIndexLabel(self, row):
         self.toggleButtons()
-
+        #self.utils_btn.toggleButtons(self.controlBtnList)
         #encodeLabel = self.tableEncode[0]
         encodeLabel = self.resultLabel.get('encode')
         first_encode_elem_y = encodeLabel.geometry().y()
@@ -525,7 +425,6 @@ class Gui_Test(QMainWindow):
         anim_group.start()
 
 
-
         indexLabel = QLabel(self)
         indexLabel.setText("Index: " + str(label_val))
         #indexLabel.setGeometry(QRect(first_encode_elem_x, first_encode_elem_y+50, 0, 0))
@@ -546,6 +445,7 @@ class Gui_Test(QMainWindow):
         anim.setDuration(speed)
         anim_group.addAnimation(anim)
         anim_group.finished.connect(self.toggleButtons)
+        #anim_group.finished.connect(self.utils_btn.toggleButtons(self.controlBtnList))
         anim_group.start()
 
         #self.tableFinalIndex.append(indexLabel)
@@ -573,6 +473,8 @@ class Gui_Test(QMainWindow):
 
     def showIndex(self, row):
         self.toggleButtons()
+        #self.utils_btn.toggleButtons(self.controlBtnList)
+
         table = self.tableSort[row]
         firstLabel = table[0]
         entry_y = firstLabel.geometry().y()
@@ -588,8 +490,8 @@ class Gui_Test(QMainWindow):
         indexLabel.show()
 
         anim = QPropertyAnimation(indexLabel, b"geometry", self)
-#        anim.setEndValue(QRect(indexLabel.geometry().x(), indexLabel.geometry().y(), indexLabel.sizeHint().width(),
-#                               indexLabel.sizeHint().height()))
+        #        anim.setEndValue(QRect(indexLabel.geometry().x(), indexLabel.geometry().y(), indexLabel.sizeHint().width(),
+        #                               indexLabel.sizeHint().height()))
         anim.setEndValue(QRect(indexLabel.geometry().x(), indexLabel.geometry().y(), indexLabel.sizeHint().width(),
                                self.labelHeight))
         print(str(indexLabel.geometry().x()), str(indexLabel.geometry().y()), str(indexLabel.sizeHint().width()),
@@ -597,6 +499,7 @@ class Gui_Test(QMainWindow):
         speed = int(500*self.speedFactor)
         anim.setDuration(speed)
         anim.finished.connect(self.toggleButtons)
+        #anim.finished.connect(self.utils_btn.toggleButtons(self.controlBtnList))
         anim.start()
 
         self.tableIndex.append(indexLabel)
@@ -604,6 +507,8 @@ class Gui_Test(QMainWindow):
 
     def selectLastChar(self, row_index):
         self.toggleButtons()
+        #self.utils_btn.toggleButtons(self.controlBtnList)
+
         table = self.tableSort[row_index]
         lastLabel = table[-1]
 
@@ -661,6 +566,7 @@ class Gui_Test(QMainWindow):
 
         anim_group.addAnimation(anim)
         anim_group.finished.connect(self.toggleButtons)
+        #anim_group.finished.connect(self.utils_btn.toggleButtons(self.controlBtnList))
         anim_group.start()
 
         self.animateBackgroundColor(lastChar, QColor("orange"), QColor("red"), duration=5000)
@@ -670,6 +576,8 @@ class Gui_Test(QMainWindow):
 
     def selectSortedRow(self, row_index):
         self.toggleButtons()
+        #self.utils_btn.toggleButtons(self.controlBtnList)
+
         table = self.table[row_index]
         copyTable = []
         anim_group = QSequentialAnimationGroup(self)
@@ -707,6 +615,7 @@ class Gui_Test(QMainWindow):
             anim_group.addAnimation(anim)
 
         anim_group.finished.connect(self.toggleButtons)
+        #anim_group.finished.connect(self.utils_btn.toggleButtons(self.controlBtnList))
         anim_group.start()
 
         for label in copyTable:
@@ -715,8 +624,10 @@ class Gui_Test(QMainWindow):
         self.tableSort.append(copyTable)
 
     def rotate(self):
-        copyTable = []
         self.toggleButtons()
+        #self.utils_btn.toggleButtons(self.controlBtnList)
+
+        copyTable = []
         anim_group = QSequentialAnimationGroup(self)
 
         table = self.table[-1]
@@ -786,6 +697,9 @@ class Gui_Test(QMainWindow):
         anim.setDuration(speed)
         anim_group.addAnimation(anim)
         anim_group.finished.connect(self.toggleButtons)
+        #print(self.controlBtnList)
+        #anim_group.finished.connect(self.utils_btn.toggleButtons(self.controlBtnList))
+        #anim_group.finished.connect(self.utils_btn.toggle)
         anim_group.start()
 
         for label in copyTable:
@@ -822,12 +736,13 @@ class Gui_Test(QMainWindow):
 
     def stepBack(self):
 
-        if self.state == STATE.F_ROTATION:
+        if (self.state.getState() == STATE.F_ROTATION):
             self.printStep()
 
             if self.step > 0:
                 tableLast = self.table[-1]
-                self.deleteLabelList(self.table[-1])
+                #self.deleteLabelList(self.table[-1])
+                self.utils_table.deleteLabelList(self.table[-1])
                 del self.table[-1]
                 self.textTable.removeLastText()
 
@@ -837,96 +752,84 @@ class Gui_Test(QMainWindow):
             else:
                 self.step = self.step - 1
 
-        elif self.state == STATE.F_SORT:
+        elif (self.state.getState() == STATE.F_SORT):
             self.step = self.step - 1
             if self.step >= 0:
-                self.deleteLabelList(self.tableSort[-1])
+                #self.deleteLabelList(self.tableSort[-1])
+                self.utils_table.deleteLabelList(self.tableSort[-1])
                 del self.tableSort[-1]
 
             if self.step < 0:
-                self.deleteLabelList(self.tableSort[-1])
+                self.utils_table.deleteLabelList(self.tableSort[-1])
+                #self.deleteLabelList(self.tableSort[-1])
                 del self.tableSort[-1]
-                self.state = STATE.F_ROTATION
+                self.state.setState(STATE.F_ROTATION)
                 self.step = self._MAX_STEPS - 1
-                self.displayInfoText(DESC.forward_rotation.value)
+                #self.displayInfoText(DESC.forward_rotation.value)
+                self.description.setDescription(DESC.forward_rotation)
 
-        elif self.state == STATE.F_ENCODE:
+        elif (self.state.getState() == STATE.F_ENCODE):
             self.step = self.step - 1
             if self.step >= 0:
-                self.deleteLastLabel(self.tableEncode)
+                self.utils_table.deleteLastLabel(self.tableEncode)
+                #self.deleteLastLabel(self.tableEncode)
                 self.encode = self.encode[0::-1]
 
             if self.step < 0:
-                self.deleteLastLabel(self.tableEncode)
-                self.state = STATE.F_SORT
+                self.utils_table.deleteLastLabel(self.tableEncode)
+                #self.deleteLastLabel(self.tableEncode)
+                self.state.setState(STATE.F_SORT)
                 self.step = self._MAX_STEPS - 1
-                self.displayInfoText(DESC.forward_sort.value)
+                #self.displayInfoText(DESC.forward_sort.value)
+                self.description.setDescription(DESC.forward_sort)
 
-        elif self.state == STATE.F_INDEX_SHOW:
+        elif (self.state.getState() == STATE.F_INDEX_SHOW):
             for i in range(self._MAX_STEPS):
                 self.step = self.step - 1
                 print(str(i))
                 if self.step >= 0:
-                    self.deleteLastLabel(self.tableIndex)
+                    self.utils_table.deleteLastLabel(self.tableIndex)
+                    #self.deleteLastLabel(self.tableIndex)
 
                 if self.step < 0:
-                    self.deleteLastLabel(self.tableIndex)
-                    self.state = STATE.F_ENCODE
+                    self.utils_table.deleteLastLabel(self.tableIndex)
+                    #self.deleteLastLabel(self.tableIndex)
+                    self.state.setState(STATE.F_ENCODE)
                     self.step = self._MAX_STEPS - 1
-                    self.displayInfoText(DESC.forward_encode.value)
+                    #self.displayInfoText(DESC.forward_encode.value)
+                    self.description.setDescription(DESC.forward_encode)
 
-        elif self.state == STATE.F_INDEX_SELECT:
+        elif (self.state.getState() == STATE.F_INDEX_SELECT):
             self.step = self.step - 1
             if self.step >= 0:
                 self.selectIndex(self.step, "prev", QColor("red"), QColor("blue"))
 
             if self.step < 0:
                 self.selectIndex(self.step, "prev", QColor("red"), QColor("blue"))
-                self.state = STATE.F_INDEX_SHOW
+                self.state.setState(STATE.F_INDEX_SHOW)
                 self.step = self._MAX_STEPS - 1
 
-        elif self.state == STATE.F_END:
+        elif (self.state.getState() == STATE.F_END):
             self.step = self.step - 1
             self.selectIndex(self.step, "prev", QColor("red"), QColor("blue"))
-            self.state = STATE.F_INDEX_SELECT
-            self.deleteResultLabel()
-            self.displayInfoText(DESC.forward_index.value)
+            self.state.setState(STATE.F_INDEX_SELECT)
+            #self.utils_table.deleteResultLabel()
+            self.deleteResulLabel()
+            #self.deleteResultLabel()
+            #self.displayInfoText(DESC.forward_index.value)
+            self.description.setDescription(DESC.forward_index)
 
+    def deleteResulLabel(self):
+        self.utils_table.deleteDirectoryEntry(self.resultLabel, 'encode')
+        self.utils_table.deleteDirectoryEntry(self.resultLabel, 'index')
 
     def toggleButtons(self):
-        self.toggleButton(self.next_button)
-        self.toggleButton(self.prev_button)
-        self.toggleButton(self.transform_button)
-
-    def toggleButton(self, button):
-        if button.isEnabled():
-            button.setEnabled(False)
-        else:
-            button.setEnabled(True)
+        self.utils_btn.toggleButtons(self.controlBtnList)
 
 
-    def deleteResultLabel(self):
-        self.resultLabel['encode'].deleteLater()
-        del self.resultLabel['encode']
-        self.resultLabel['index'].deleteLater()
-        del self.resultLabel['index']
-
-    def deleteLastLabel(self, table):
-        table[-1].deleteLater()
-        del table[-1]
-
-    def deleteLabelList(self, list):
-        for label in list:
-            label.deleteLater()
-
-    def printLabelTable(self, table):
-        content = "["
-        for label in table:
-            content = content + str(label.text()) + ", "
-
-        content = content[0::-2]
-        content = content + "]"
-        print(content)
+    # def deleteLabelList(self, list):
+    #     for label in list:
+    #         label.deleteLater()
 
     def rotateTable(self, table):
         last = table[-1]
@@ -944,14 +847,11 @@ class Gui_Test(QMainWindow):
             table[i] = table[i+1]
 
         table[-1] = first
-        # self.printTable(table)
 
     def createMenu(self):
         exit_act = QAction('Exit', self)
         exit_act.setShortcut('Ctrl+Q')
         exit_act.triggered.connect(self.close)
-
-
 
         menu_bar = self.menuBar()
         menu_bar.setNativeMenuBar(False)
