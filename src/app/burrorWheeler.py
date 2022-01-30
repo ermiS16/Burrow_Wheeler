@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
     app = QApplication(sys.argv)
     # window = Gui.Gui()
-    window = Gui_Test.Gui_Test()
+    window = Gui_Test.Gui()
     sys.exit(app.exec())
 
     # app = Gui.Gui(3, -4.5)

@@ -20,7 +20,7 @@ class Description(QLabel):
         self._loadDescriptions()
 
     def _loadDescriptions(self):
-        tree = ET.parse("/home/eric/Dokumente/Repositories/hska/Burrow_Wheeler/src/data/Descriptions.xml")
+        tree = ET.parse("/src/res/Descriptions.xml")
         xml_root = tree.getroot()
         for child in xml_root:
             desc = child.text
@@ -45,24 +45,4 @@ class Description(QLabel):
         #self._description.setText("")
         self.setText("")
 
-    # def setStyleSheet(self, style):
-    #     self._description.setStyleSheet(style)
-    #
-    # def setGeometry(self, geo):
-    #     self._description.setGeometry(geo)
-    #
-    # def setAlignment(self, align):
-    #     self._description.setAlignment(align)
-    #
-    # def setWordWrap(self, bool):
-    #     self._description.setWordWrap(bool)
-    #
-    # def setParent(self, parent):
-    #     self._description.setParent(parent)
-    #
-    # def show(self):
-    #     self._description.show()
-    #
-    # def deleteLater(self):
-    #     self._description.deleteLater()
 

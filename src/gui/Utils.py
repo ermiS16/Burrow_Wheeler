@@ -6,15 +6,9 @@ class Table:
         pass
 
     def deleteDirectoryEntry(self, dir, key):
-        dir[key].deleteLater()
-        del dir[key]
-
-    def deleteResultLabel(self):
-        self.resultLabel['encode'].deleteLater()
-        del self.resultLabel['encode']
-        self.resultLabel['index'].deleteLater()
-        del self.resultLabel['index']
-
+        if key in dir:
+            dir[key].deleteLater()
+            del dir[key]
 
     def deleteLastLabel(self, table):
         table[-1].deleteLater()
@@ -26,9 +20,13 @@ class Table:
             for i in range(len(table)):
                 self.deleteLabelList(table[i])
 
+            for list in table:
+                del list
+
     def deleteLabelList(self, list):
         for label in list:
             label.deleteLater()
+            del label
 
 
     def printLabelTable(self, table):
@@ -86,9 +84,5 @@ class Label:
     def setText(self, label, text):
         label.setText(text)
 
-def increaseStep(step):
-    step = step + 1
 
-def decreaseStep(step):
-    step = step - 1
 
