@@ -65,10 +65,10 @@ class Button:
         print("Toggle")
 
     def toggleButtons(self, btn_list):
-        print("Button List: ")
-        print(btn_list)
+        #print("Button List: ")
+        #print(btn_list)
         for btn in btn_list:
-            print(str(type(btn)))
+            #print(str(type(btn)))
             self.toggleButton(btn)
 
     def toggleButton(self, btn):
