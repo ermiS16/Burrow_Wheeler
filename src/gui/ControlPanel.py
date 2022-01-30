@@ -13,6 +13,11 @@ class ElemKeys(Enum):
     reset_button = 'reset_button'
     direction_box = 'direction_box'
 
+class Direction(Enum):
+    forward = "Vorwärts"
+    backwards = "Rückärts"
+    choose = "Richtung Auswählen"
+
 class ControlPanel(QWidget):
     def __init__(self, arg1):
         super().__init__(arg1)
@@ -22,7 +27,7 @@ class ControlPanel(QWidget):
         self._y = 0
         self._elem = {}
         self._controlBtnList = []
-        self.directions = ['Richtung Auswählen', 'Vorwärts', 'Rückwärts']
+        self.directions = [Direction.choose.value, Direction.forward.value, Direction.backwards.value]
         self.input_field_label = None
         self.input_field = None
         self.transform_button = None
@@ -72,14 +77,17 @@ class ControlPanel(QWidget):
 
     def connectBtnOnClick(self, key, func):
         elem = self.getElem(key)
+        elem.disconnect()
         elem.clicked.connect(func)
 
-    def connectSliderOnChange(self, key, func):
-        elem = self.getElem(key.value)
-        elem.valueChanged.connect(func)
+    def connectSliderOnChange(self, key, func, *args):
+        elem = self.getElem(key)
+        elem.disconnect()
+        elem.valueChanged.connect(lambda: func(*args))
 
     def connectDirection(self, key, func):
-        elem = self.getElem(key.value)
+        elem = self.getElem(key)
+        elem.disconnect()
         elem.currentTextChanged.connect(func)
 
     def getBtnList(self):
@@ -91,14 +99,13 @@ class ControlPanel(QWidget):
     def btnMarginBottom(self):
         return self.button_margin_bottom
 
-    def initControlPanel(self):
-        #self.controlPanel = QWidget(self)
-        #self.controlPanel.setObjectName('ControlPanel')
+    def getInputText(self):
+        return self.input_field.text()
 
-        # for key in self._elem:
-        #     if self._elem[key] != None:
-        #         self._elem[key].deleteLater()
-        #         del self._elem[key]
+    def getDirection(self):
+        return self.directionCombo.currentText()
+
+    def initControlPanel(self):
 
         self.button_width = 100
         self.button_height = 30
@@ -116,7 +123,7 @@ class ControlPanel(QWidget):
         self.input_field_label.move(self._x, self._y)
         self.input_field_label.setParent(self)
         #self.input_field_label.setParent(self.mainFrameWidget)
-        self.input_field_label.show()
+        #self.input_field_label.show()
         input_field_label_length = self.input_field_label.geometry().width()
 
         if self.input_field != None:
@@ -133,9 +140,6 @@ class ControlPanel(QWidget):
         self.input_field.setValidator(input_text_validator)
         self.input_field.setPlaceholderText("Input")
         self.input_field.setText("Wikipedia!")
-        #input_field.setParent(self)
-        #self.input_field.setParent(self.mainFrameWidget)
-        #input_field.show()
 
         self.setElem(ElemKeys.input_field.value, self.input_field)
 
@@ -148,9 +152,6 @@ class ControlPanel(QWidget):
         self.transform_button.setText("Transformiere")
         self.transform_button_x_start = input_field_width + (self.button_width) + (self.button_margin*4)
         self.transform_button.move(self.transform_button_x_start, self._y)
-        #self.transform_button.clicked.connect(self.initForward)
-        #self.transform_button.setParent(self)
-        #self.transform_button.setParent(self.mainFrameWidget)
 
         self.setElem(ElemKeys.transform_button.value, self.transform_button)
 
@@ -164,9 +165,6 @@ class ControlPanel(QWidget):
         self.next_button.setEnabled(False)
         next_button_x_start = self._x + (self.button_width*3) + (self.button_margin*3)
         self.next_button.move(next_button_x_start, self._y)
-        #self.next_button.clicked.connect(self.nextStep)
-        #self.next_button.setParent(self)
-        #self.next_button.setParent(self.mainFrameWidget)
 
         self.setElem(ElemKeys.next_button.value, self.next_button)
 
@@ -180,9 +178,6 @@ class ControlPanel(QWidget):
         self.prev_button.setEnabled(False)
         prev_x_start = self._x + (self.button_width*4) + (self.button_margin*4)
         self.prev_button.move(prev_x_start, self._y)
-        #self.prev_button.clicked.connect(self.stepBack)
-        #self.prev_button.setParent(self)
-        #self.prev_button.setParent(self.mainFrameWidget)
 
         self.setElem(ElemKeys.prev_button.value, self.prev_button)
 
@@ -236,7 +231,7 @@ class ControlPanel(QWidget):
             self.directionCombo.deleteLater()
             del self.directionCombo
 
-        self.directionCombo = QComboBox()
+        self.directionCombo = QComboBox(self)
         self.directionCombo.setObjectName(ElemKeys.direction_box.value)
         self.directionCombo.addItems(self.directions)
         #self.mainFrameControlDirection.currentTextChanged.connect(self.switchPage)
