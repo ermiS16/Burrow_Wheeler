@@ -78,7 +78,6 @@ class TextTable:
     def getSortedTable(self):
         return self.table
 
-
     def printTable(self):
         print(self.table)
 
