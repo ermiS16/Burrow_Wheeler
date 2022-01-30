@@ -1,7 +1,6 @@
 import xml.etree.ElementTree as ET
 from enum import Enum, EnumMeta
 from PyQt5.QtWidgets import QLabel
-from gui.Style import Style
 
 class DESC(Enum):
     forward_rotation = "forward_rotation"
@@ -20,7 +19,7 @@ class Description(QLabel):
         self._loadDescriptions()
 
     def _loadDescriptions(self):
-        tree = ET.parse("/src/res/Descriptions.xml")
+        tree = ET.parse("/home/eric/Dokumente/Repositories/hska/Burrow_Wheeler/src/res/Descriptions.xml")
         xml_root = tree.getroot()
         for child in xml_root:
             desc = child.text
