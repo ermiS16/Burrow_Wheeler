@@ -7,7 +7,6 @@ class Window:
         self._windowWidth = 0
         self._windowHeight = 0
 
-
         self.screen_resolution = screen.geometry()
         self._screenWidth, self._screenHeight = self.screen_resolution.width(), self.screen_resolution.height()
         self._windowWidth, self._windowHeight = self.screen_resolution.width(), self.screen_resolution.height()
