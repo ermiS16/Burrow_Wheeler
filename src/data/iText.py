@@ -51,8 +51,6 @@ class TextTable:
 
     def sortTable(self):
         self.sortedTable = sorted(self.table.copy())
-        # self.printSortedTable()
-        # self.printTable()
         for entry in self.table:
             index_sorted = self.sortedTable.index(entry)
             index_rotation = self.table.index(entry)
