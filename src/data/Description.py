@@ -1,5 +1,5 @@
 import xml.etree.ElementTree as ET
-from enum import Enum, EnumMeta
+from enum import Enum
 from PyQt5.QtWidgets import QLabel
 
 class DESC(Enum):
@@ -15,7 +15,6 @@ class Description(QLabel):
     def __init__(self, text):
         super().__init__(text)
         self._descriptions = {}
-        #self._description = desc
         self._loadDescriptions()
 
     def _loadDescriptions(self):
@@ -37,11 +36,9 @@ class Description(QLabel):
 
     def setDescription(self, desc):
         self.removeDescription()
-        #self._description.setText(self.getDescription(desc.value))
         self.setText(self.getDescription(desc.value))
 
     def removeDescription(self):
-        #self._description.setText("")
         self.setText("")
 
 
