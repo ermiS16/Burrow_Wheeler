@@ -1,6 +1,3 @@
-from PyQt5.QtWidgets import QWidget
-from enum import Enum
-
 class Table:
     def __init__(self):
         pass
@@ -36,7 +33,6 @@ class Table:
 
         content = content[0::-2]
         content = content + "]"
-        print(content)
 
 
     def rotateTable(self, table):
@@ -61,14 +57,8 @@ class Button:
     def __init__(self):
         pass
 
-    def toggle(self):
-        print("Toggle")
-
     def toggleButtons(self, btn_list):
-        #print("Button List: ")
-        #print(btn_list)
         for btn in btn_list:
-            #print(str(type(btn)))
             self.toggleButton(btn)
 
     def toggleButton(self, btn):
