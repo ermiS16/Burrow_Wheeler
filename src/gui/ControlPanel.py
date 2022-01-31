@@ -1,21 +1,23 @@
-from PyQt5.QtWidgets import QLabel, QPushButton, QSlider, QLineEdit, QWidget, QComboBox
+from PyQt5.QtWidgets import QLabel, QPushButton, QSlider, QLineEdit, QWidget, QComboBox, QColorDialog
 from PyQt5.QtCore import QRect, QRegExp, Qt
 from PyQt5.QtGui import QRegExpValidator
 from enum import Enum
 
 class ElemKeys(Enum):
     input_field = 'input_field'
+    input_field_label = 'input_field_label'
     delta_field = 'delta_field'
+    delta_field_label = 'delta_field_label'
     next_button = 'next_button'
     prev_button = 'prev_button'
     transform_button = 'transform_button'
     speed_slider = 'speed_slider'
     reset_button = 'reset_button'
-    direction_box = 'direction_box'
+    direction_combo = 'direction_box'
 
 class Direction(Enum):
     forward = "Vorwärts"
-    backwards = "Rückärts"
+    backwards = "Rückwärts"
     choose = "Richtung Auswählen"
 
 class ControlPanel(QWidget):
@@ -29,14 +31,39 @@ class ControlPanel(QWidget):
         self._controlBtnList = []
         self.directions = [Direction.choose.value, Direction.forward.value, Direction.backwards.value]
         self.input_field_label = None
+        self.delta_field_label = None
         self.input_field = None
+        self.delta_field = None
         self.transform_button = None
         self.next_button = None
         self.prev_button = None
         self.reset_button = None
         self.speed_slider = None
         self.directionCombo = None
-        self.initControlPanel()
+
+        self._input_field_label = None
+        self._delta_field_label = None
+        self._input_field = None
+        self._delta_field = None
+        self._transform_button = None
+        self._next_button = None
+        self._prev_button = None
+        self._reset_button = None
+        self._speed_slider = None
+        self._directionCombo = None
+
+        self._COUNT_ELEM_X = 7
+
+        #self.initControlPanel()
+        self.initControl()
+
+    def setGeo(self, rect):
+        self.setGeometry(rect)
+        self._x = rect.x()
+        self._y = rect.y()
+        self._width = rect.width()
+        self._height = rect.height()
+        self.update()
 
     def setWidth(self, width):
         self._width = width
@@ -49,19 +76,14 @@ class ControlPanel(QWidget):
         self.update()
 
     def update(self):
-        self.initControlPanel()
+        self.initControl()
+        #self.initControlPanel()
 
     def getWidth(self):
         return self.geometry().width()
 
     def getHeight(self):
         return self.geometry().height()
-
-    def x(self):
-        return self.geometry().x()
-
-    def y(self):
-        return self.geometry().y()
 
     def setX(self, x):
         self.setGeometry(QRect(x, self.geometry().y(), self.geometry().width(), self.geometry().height()))
@@ -77,6 +99,8 @@ class ControlPanel(QWidget):
 
     def connectBtnOnClick(self, key, func):
         elem = self.getElem(key)
+        print(key.value)
+        print(elem)
         elem.disconnect()
         elem.clicked.connect(func)
 
@@ -90,154 +114,188 @@ class ControlPanel(QWidget):
         elem.disconnect()
         elem.currentTextChanged.connect(func)
 
+    def toggleControlPanelBtn(self):
+        print(self._controlBtnList)
+        for btn in self._controlBtnList:
+            if btn.isEnabled():
+                btn.setEnabled(False)
+            else:
+                btn.setEnabled(True)
+
     def getBtnList(self):
         return self._controlBtnList
 
     def getButton(self, key):
         return [btn for btn in self._controlBtnList if btn.objectName() == key.value][0]
 
-    def btnMarginBottom(self):
-        return self.button_margin_bottom
+    def getIndexText(self):
+        return self._delta_field.text()
 
     def getInputText(self):
-        return self.input_field.text()
+        return self._input_field.text()
 
     def getDirection(self):
-        return self.directionCombo.currentText()
+        return self._directionCombo.currentText()
 
-    def initControlPanel(self):
+    def removeControlElement(self, elem):
+        if elem != None:
+            elem.deleteLater()
+            del elem
 
-        self.button_width = 100
-        self.button_height = 30
-        self.button_margin = round(self._width / 120)
-        self.button_margin_bottom = self.button_height + round(self._width / 120)
+    def clearControlBtnList(self):
+        for btn in self._controlBtnList:
+            del btn
+
+        self._controlBtnList = []
+
+    def initControl(self):
+
+        print("Control Panel", self._width, self._height)
+
+        self.removeControlElement(self._input_field_label)
+        self.removeControlElement(self._input_field)
+        self.removeControlElement(self._delta_field_label)
+        self.removeControlElement(self._delta_field)
+        self.removeControlElement(self._transform_button)
+        self.removeControlElement(self._next_button)
+        self.removeControlElement(self._prev_button)
+        self.removeControlElement(self._speed_slider)
+        self.removeControlElement(self._directionCombo)
+        self.clearControlBtnList()
+
+        self._control_panel_width = self._width
+        self._control_panel_height = self._width * 0.1    # (10% von Parent)
+        self._control_panel_x = self._x
+        self._control_panel_y = self._y
+
+        elem_margin_x = self._control_panel_width * 0.025    # (2% von Parent)
+        elem_margin_y = self._control_panel_height * 0.15   # (1% von Parent)
+
+        control_panel_padding_top = self._control_panel_height * 0.01   # (2% von Parent)
 
 
+        self._input_field_label = QLabel(self)
+        self._input_field_label.setObjectName(ElemKeys.delta_field_label.value)
+        self._input_field_label.setText("Eingabewort:")
+        input_field_label_width = self._input_field_label.geometry().width()
 
-        if self.input_field_label != None:
-            self.input_field_label.deleteLater()
-            del self.input_field_label
-
-        self.input_field_label = QLabel(self)
-        self.input_field_label.setText("Eingabewort:")
-        self.input_field_label.move(self._x, self._y)
-        self.input_field_label.setParent(self)
-        #self.input_field_label.setParent(self.mainFrameWidget)
-        #self.input_field_label.show()
-        input_field_label_length = self.input_field_label.geometry().width()
-
-        if self.input_field != None:
-            self.input_field.deleteLater()
-            del self.input_field
-
-        self.input_field = QLineEdit(self)
-        self.input_field.setObjectName('input_field')
-        input_field_width = self.input_field.geometry().width()
-        input_field_x_start = input_field_label_length + (self.button_margin*2)
-        self.input_field.move(input_field_x_start, self._y)
+        self._input_field = QLineEdit(self)
+        self._input_field.setObjectName(ElemKeys.input_field.value)
         input_text_regex = QRegExp(".{2,15}")
         input_text_validator = QRegExpValidator(input_text_regex)
-        self.input_field.setValidator(input_text_validator)
-        self.input_field.setPlaceholderText("Input")
-        self.input_field.setText("Wikipedia!")
+        self._input_field.setValidator(input_text_validator)
+        self._input_field.setPlaceholderText("Input")
+        self._input_field.setText("Wikipedia!")
+        input_field_width = self._input_field.geometry().width()
 
-        self.setElem(ElemKeys.input_field.value, self.input_field)
+        self._delta_field_label = QLabel(self)
+        self._delta_field_label.setObjectName(ElemKeys.delta_field_label.value)
+        self._delta_field_label.setText("Index:")
+        delta_field_label_width = self._delta_field_label.geometry().width()
 
-        if self.transform_button != None:
-            self.transform_button.deleteLater()
-            del self.transform_button
+        self._delta_field = QLineEdit(self)
+        self._delta_field.setObjectName(ElemKeys.delta_field.value)
+        delta_text_regex = QRegExp("\d{,15}")
+        delta_text_validator = QRegExpValidator(delta_text_regex)
+        self._delta_field.setValidator(delta_text_validator)
+        self._delta_field.setPlaceholderText("Index")
+        self._delta_field.setEnabled(False)
+        delta_field_width = self._delta_field.geometry().width()
 
-        self.transform_button = QPushButton(self)
-        self.transform_button.setObjectName(ElemKeys.transform_button.value)
-        self.transform_button.setText("Transformiere")
-        self.transform_button_x_start = input_field_width + (self.button_width) + (self.button_margin*4)
-        self.transform_button.move(self.transform_button_x_start, self._y)
+        self._transform_button = QPushButton(self)
+        self._transform_button.setObjectName(ElemKeys.transform_button.value)
+        self._transform_button.setText("Transformieren")
+        transform_btn_width = self._transform_button.geometry().width()
 
-        self.setElem(ElemKeys.transform_button.value, self.transform_button)
+        self._next_button = QPushButton(self)
+        self._next_button.setObjectName(ElemKeys.next_button.value)
+        self._next_button.setText("Next")
+        self._next_button.setEnabled(False)
+        next_btn_width = self._next_button.geometry().width()
 
-        if self.next_button != None:
-            self.next_button.deleteLater()
-            del self.next_button
+        self._prev_button = QPushButton(self)
+        self._prev_button.setObjectName(ElemKeys.prev_button.value)
+        self._prev_button.setText("Prev")
+        self._prev_button.setEnabled(False)
+        prev_btn_width = self._prev_button.geometry().width()
 
-        self.next_button = QPushButton(self)
-        self.next_button.setObjectName(ElemKeys.next_button.value)
-        self.next_button.setText("Next")
-        self.next_button.setEnabled(False)
-        next_button_x_start = self._x + (self.button_width*3) + (self.button_margin*3)
-        self.next_button.move(next_button_x_start, self._y)
+        self._speed_slider = QSlider(Qt.Horizontal, self)
+        self._speed_slider.setObjectName(ElemKeys.speed_slider.value)
+        self._speed_slider.setGeometry(QRect(self._speed_slider.geometry().x(), self._speed_slider.geometry().y(),
+                                       int(self._speed_slider.geometry().width()*1.5), int(self._speed_slider.geometry().height()*1.3)))
+        self._speed_slider.setMinimum(1)
+        self._speed_slider.setMaximum(14)
+        self._speed_slider.setSingleStep(1)
+        self._speed_slider.setValue(7)
+        self._speed_slider.setTickInterval(1)
+        self._speed_slider.setTickPosition(QSlider.TicksBelow)
+        speed_slider_width = self._speed_slider.geometry().width()
 
-        self.setElem(ElemKeys.next_button.value, self.next_button)
+        self._directionCombo = QComboBox(self)
+        self._directionCombo.setObjectName(ElemKeys.direction_combo.value)
+        self._directionCombo.addItems(self.directions)
+        combo_height = self._directionCombo.geometry().height()
+        # self._directionCombo.setGeometry(QRect(self._directionCombo.geometry().x(), self._directionCombo.geometry().y(),
+        #                                        self._directionCombo.sizeHint().width(),
+        #                                        combo_height))
+        self._directionCombo.resize(self._directionCombo.sizeHint())
+        direction_width = self._directionCombo.geometry().width()
 
-        if self.prev_button != None:
-            self.prev_button.deleteLater()
-            del self.prev_button
+        elem_all_width = (elem_margin_x * self._COUNT_ELEM_X) + input_field_width + input_field_width + \
+                         transform_btn_width + next_btn_width + prev_btn_width + speed_slider_width + direction_width
 
-        self.prev_button = QPushButton(self)
-        self.prev_button.setObjectName(ElemKeys.prev_button.value)
-        self.prev_button.setText("Prev")
-        self.prev_button.setEnabled(False)
-        prev_x_start = self._x + (self.button_width*4) + (self.button_margin*4)
-        self.prev_button.move(prev_x_start, self._y)
+        elem_all_width_half = elem_all_width / 2
+        control_panel_center_x = self._control_panel_width / 2
 
-        self.setElem(ElemKeys.prev_button.value, self.prev_button)
+        x_start = control_panel_center_x - elem_all_width_half
+        y_start = self._control_panel_y + control_panel_padding_top
+        print("Input Field Label", x_start, input_field_label_width, elem_margin_x)
+        self._input_field_label.move(x_start, y_start)
 
-        if self.reset_button != None:
-            self.reset_button.deleteLater()
-            del self.reset_button
+        x_start = x_start + input_field_label_width + elem_margin_x
+        print("Input Field", x_start, input_field_label_width, elem_margin_x)
+        self._input_field.move(x_start, y_start)
 
-        self.reset_button = QPushButton(self)
-        self.reset_button.setObjectName(ElemKeys.reset_button.value)
-        self.reset_button.setText("Reset")
-        self.reset_button.setEnabled(True)
-        reset_x_start = self._x + (self.button_width*5) + (self.button_margin*5)
-        self.reset_button.move(reset_x_start, self._y)
-        #self.reset_button.clicked.connect(self.resetWindow)
-        #self.reset_button.setParent(self)
-        #self.reset_button.setParent(self.mainFrameWidget)
+        x_start = x_start + input_field_width + elem_margin_x
+        print("Direction", x_start, input_field_width, elem_margin_x)
+        self._directionCombo.move(x_start, y_start)
 
-        self.setElem(ElemKeys.reset_button.value, self.reset_button)
+        x_start = x_start + direction_width + elem_margin_x
+        print("Next Button", x_start, direction_width, elem_margin_x)
+        self._next_button.move(x_start, y_start)
 
-        self._controlBtnList.append(self.transform_button)
-        self._controlBtnList.append(self.next_button)
-        self._controlBtnList.append(self.prev_button)
-        self._controlBtnList.append(self.reset_button)
+        x_start = x_start + next_btn_width + elem_margin_x
+        print("Prev Button", x_start, next_btn_width, elem_margin_x)
+        self._prev_button.move(x_start, y_start)
 
-        if self.speed_slider != None:
-            self.speed_slider.deleteLater()
-            del self.speed_slider
+        x_start = x_start + prev_btn_width + elem_margin_x
+        print("Speed Slider", x_start, prev_btn_width, elem_margin_x)
+        self._speed_slider.move(x_start, y_start)
 
-        self.speed_slider = QSlider(Qt.Horizontal, self)
-        self.speed_slider.setObjectName(ElemKeys.speed_slider.value)
-        self.speed_slider.setMinimum(1)
-        self.speed_slider.setMaximum(14)
-        self.speed_slider.setSingleStep(1)
-        self.speed_slider.setValue(7)
-        self.speed_slider.setTickInterval(1)
-        self.speed_slider.setTickPosition(QSlider.TicksBelow)
-        slider_x_start = self._x + (self.button_width*6) + (self.button_margin*6)
-        slider_y_start = self._y
-        if self._width > 0:
-            slider_width = round(self._width / (self._width/200))
-        else:
-            slider_width = 0
-        self.speed_slider.setGeometry(QRect(slider_x_start, self._y, slider_width, self.speed_slider.geometry().height()+5))
-        #self.speed_slider.valueChanged.connect(self.updateSpeed)
-        #self.speed_slider.setParent(self)
-        #self.speed_slider.setParent(self.mainFrameWidget)
+        x_start = control_panel_center_x - elem_all_width_half
+        y_start = y_start + elem_margin_y
+        print("Delta Field Label", x_start, delta_field_label_width, elem_margin_x)
+        self._delta_field_label.move(x_start, y_start)
 
-        self.setElem(ElemKeys.speed_slider.value, self.speed_slider)
+        x_start = x_start + delta_field_label_width + elem_margin_x
+        print("Delta Field", x_start, delta_field_label_width, elem_margin_x)
+        self._delta_field.move(x_start, y_start)
 
-        if self.directionCombo != None:
-            self.directionCombo.deleteLater()
-            del self.directionCombo
+        x_start = x_start + delta_field_width + elem_margin_x
+        print("Transform Button", x_start, delta_field_width, elem_margin_x)
+        self._transform_button.move(x_start, y_start)
 
-        self.directionCombo = QComboBox(self)
-        self.directionCombo.setObjectName(ElemKeys.direction_box.value)
-        self.directionCombo.addItems(self.directions)
-        #self.mainFrameControlDirection.currentTextChanged.connect(self.switchPage)
-        direction_x_start = self._x + (self.button_width*8) + (self.button_margin*8)
-        self.directionCombo.move(direction_x_start, self._y)
-        #self.directionCombo.setParent(self)
-        #self.mainFrameControlDirection.setParent(self.mainFrameWidget)
+        self.setElem(ElemKeys.input_field.value, self._input_field)
+        self.setElem(ElemKeys.input_field_label.value, self._input_field_label)
+        self.setElem(ElemKeys.delta_field.value, self._delta_field)
+        self.setElem(ElemKeys.delta_field_label.value, self._delta_field_label)
+        self.setElem(ElemKeys.transform_button.value, self._transform_button)
+        self.setElem(ElemKeys.next_button.value, self._next_button)
+        self.setElem(ElemKeys.prev_button.value, self._prev_button)
+        self.setElem(ElemKeys.direction_combo.value, self._directionCombo)
+        self.setElem(ElemKeys.speed_slider.value, self._speed_slider)
 
-        self.setElem(ElemKeys.direction_box.value, self.directionCombo)
+        self._controlBtnList.append(self._transform_button)
+        self._controlBtnList.append(self._next_button)
+        self._controlBtnList.append(self._prev_button)
+
