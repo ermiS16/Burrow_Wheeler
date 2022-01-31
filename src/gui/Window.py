@@ -1,6 +1,3 @@
-from PyQt5.QtGui import QScreen
-from PyQt5.QtCore import QRect
-
 class Window:
     def __init__(self, screen):
 
