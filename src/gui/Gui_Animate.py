@@ -136,6 +136,7 @@ class Gui(QMainWindow):
         self.show()
 
     def transform(self):
+        self._animation_finished = 0
         self.resetWindow()
         next_btn = self.controlPanel.getElem(ElemKeys.next_button)
         prev_btn = self.controlPanel.getElem(ElemKeys.prev_button)
@@ -197,13 +198,16 @@ class Gui(QMainWindow):
             self._animation_finished = 0
 
     def createAllAnimListener(self, content):
-        anim_listener = AnimListener(content)
-        anim_listener._signals.finished.connect(self.animationFinishedAll)
+        print("Create All Anim Listener")
+        self.anim_listener = AnimListener(content)
+        self.anim_listener._signals.finished.connect(self.animationFinishedAll)
+        self.anim_listener.setAutoDelete(True)
 
-        anim_group_listener = AnimGroupListener(content)
-        anim_group_listener._signals.finished.connect(self.animationFinishedAll)
-        self._threadpool.start(anim_listener)
-        self._threadpool.start(anim_group_listener)
+        self.anim_group_listener = AnimGroupListener(content)
+        self.anim_group_listener._signals.finished.connect(self.animationFinishedAll)
+        self.anim_group_listener.setAutoDelete(True)
+        self._threadpool.start(self.anim_listener)
+        self._threadpool.start(self.anim_group_listener)
 
     def animationFinished(self):
         self._animation_finished = self._animation_finished + 1
@@ -213,8 +217,10 @@ class Gui(QMainWindow):
             self._animation_finished = 0
 
     def createAnimListener(self, content):
+        print("Create Anim Listener")
         anim_listener = AnimListener(content)
         anim_listener._signals.finished.connect(self.animationFinished)
+        anim_listener.setAutoDelete(True)
         self._threadpool.start(anim_listener)
 
     def animationGroupFinished(self):
@@ -225,8 +231,10 @@ class Gui(QMainWindow):
             self._animation_finished = 0
 
     def createAnimGroupListener(self, content):
+        print("Create Anim Group Listener")
         anim_group_listener = AnimListener(content)
         anim_group_listener._signals.finished.connect(self.animationFinished)
+        anim_group_listener.setAutoDelete(True)
         self._threadpool.start(anim_group_listener)
 
 
@@ -278,8 +286,8 @@ class Gui(QMainWindow):
                     self.state.setState(STATE.F_INDEX_SELECT)
                     self._step.reset()
                 else:
-                    self.controlPanel.toggleControlPanelBtn()
-                    self.createAnimListener(self.content)
+                    # self.controlPanel.toggleControlPanelBtn()
+                    # self.createAnimListener(self.content)
                     self.content.showIndex(i)
 
         if(self.state.getState() == STATE.F_INDEX_SELECT):
@@ -298,7 +306,7 @@ class Gui(QMainWindow):
         if(self.state.getState() == STATE.F_INDEX_FINAL):
             self.state.printState()
             self.controlPanel.toggleControlPanelBtn()
-            self.createAllAnimListener(self.content)
+            self.createAnimGroupListener(self.content)
             self.content.showFinalEncodeLabel()
             self.content.selectFinalIndexLabel(self._step.getStep())
             self.state.setState(STATE.F_END)
@@ -383,13 +391,13 @@ class Gui(QMainWindow):
             self._step.printStep()
             self.state.printState()
             if (self._step.getStep() >= 0):
-                self.toggleControlPanelBtn()
-                self.createAllAnimListener(self.content)
+                self.controlPanel.toggleControlPanelBtn()
+                self.createAnimListener(self.content)
                 self.content.selectIndex(self._step.getStep(), "prev", QColor("red"), QColor("blue"))
 
             if (self._step.getStep() < 0):
-                self.toggleControlPanelBtn()
-                self.createAllAnimListener(self.content)
+                self.controlPanel.toggleControlPanelBtn()
+                self.createAnimListener(self.content)
                 self.content.selectIndex(self._step.getStep(), "prev", QColor("red"), QColor("blue"))
                 self.state.setState(STATE.F_INDEX_SHOW)
                 self._step.setStep((self._step.MAX - 1))
