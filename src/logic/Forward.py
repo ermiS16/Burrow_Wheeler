@@ -1,4 +1,6 @@
 import functools
+import time
+
 from data.iText import TextTable
 from data import iText
 from data.Description import DESC, Description
@@ -115,6 +117,10 @@ class Forward(QWidget):
     def getResultLabel(self):
         return self._resultLabel
 
+    def setResultLabel(self, key, val):
+        print(key, val)
+        self._resultLabel[key] = val
+
     def getAnimGroup(self):
         return self._animGroup
 
@@ -217,8 +223,10 @@ class Forward(QWidget):
 
         self._labelWidth = round(self._width/100)
         self._labelHeight = self._labelWidth
-        self._labelMargin = round(self._width / 120)
 
+        self._labelMargin = round(self._width / 120)
+        self._elem_margin_x = self._width * 0.005
+        self._elem_margin_y = self._height * 0.02
 
         self._indexMargin = round(self._width / 50)
         self._tableMargin = round(self._width / 4.5)
@@ -241,7 +249,8 @@ class Forward(QWidget):
             if elemCount == 0:
                 x_start = self._left_box_x_start
             else:
-                x_start = x_start + self._labelWidth + self._labelMargin
+                #x_start = x_start + self._labelWidth + self._labelMargin
+                x_start = x_start + self._labelWidth + self._elem_margin_x
 
             label.move(x_start, y_start)
             row.append(label)
@@ -267,7 +276,7 @@ class Forward(QWidget):
         encode.setCursor(QCursor(Qt.IBeamCursor))
         encode.show()
 
-        y_end = first_encode_elem_y + self._resultLabelMargin + first_encode_elem_height
+        y_end = first_encode_elem_y + self._elem_margin_y + first_encode_elem_height
         self.anim_group = QSequentialAnimationGroup(self)
         anim = QPropertyAnimation(encode, b"geometry")
         anim.setEndValue(QRect(first_encode_elem_x, y_end,
@@ -277,11 +286,13 @@ class Forward(QWidget):
         self.anim_group.addAnimation(anim)
         self.anim_group.stateChanged.connect(self.setAnimGroupState)
         self.anim_group.finished.connect(self.setAnimGroupState)
+        self.anim_group.finished.connect(lambda: self.setResultLabel('encode', encode))
         self.anim_group.start()
-        self._resultLabel['encode'] = encode
+        #self._resultLabel['encode'] = encode
 
     def selectFinalIndexLabel(self, row):
-        encodeLabel = self._resultLabel.get('encode')
+        #encodeLabel = self._resultLabel.get('encode')
+        encodeLabel = self._tableEncode[0]
         first_encode_elem_y = encodeLabel.geometry().y()
         first_encode_elem_x = encodeLabel.geometry().x()
         first_encode_elem_height = encodeLabel.geometry().height()
@@ -314,7 +325,7 @@ class Forward(QWidget):
         indexLabel.setCursor(QCursor(Qt.IBeamCursor))
         indexLabel.show()
 
-        y_end = first_encode_elem_y + self._resultLabelMargin + first_encode_elem_height
+        y_end = first_encode_elem_y + (self._elem_margin_y*2) + (first_encode_elem_height*2)
         anim = QPropertyAnimation(indexLabel, b"geometry")
         anim.setEndValue(QRect(first_encode_elem_x, y_end,
                                int(indexLabel.sizeHint().width()*2), int(indexLabel.sizeHint().height()*2)))
@@ -323,9 +334,10 @@ class Forward(QWidget):
         self.anim_group.addAnimation(anim)
         self.anim_group.stateChanged.connect(self.setAnimGroupState)
         self.anim_group.finished.connect(self.setAnimGroupState)
+        self.anim_group.finished.connect(lambda: self.setResultLabel('index', indexLabel))
         self.anim_group.start()
 
-        self._resultLabel['index'] = indexLabel
+        #self._resultLabel['index'] = indexLabel
 
 
 
@@ -359,7 +371,6 @@ class Forward(QWidget):
         indexLabel.setGeometry(QRect(indexLabel_x, entry_y, 0, 0))
         indexLabel.setAlignment(Qt.AlignCenter)
         indexLabel.show()
-
         self.anim = QPropertyAnimation(indexLabel, b"geometry", self)
         self.anim.setEndValue(QRect(indexLabel.geometry().x(), indexLabel.geometry().y(), indexLabel.sizeHint().width(),
                                self._labelHeight))
@@ -386,13 +397,12 @@ class Forward(QWidget):
         lastChar.show()
 
         tableIndexHalf = round(len(self._tableSort)/2)
-
-        labelHalf_y = round(self._right_box_height / 2)
+        y_start = round(self._right_box_height / 2)
         if(len(self._tableEncode) == 0):
-            lastChar_x_end = self._right_box_x_start
+            x_start = self._right_box_x_start
         else:
             prev_last = self._tableEncode[-1]
-            lastChar_x_end = self._labelWidth + self._labelMargin + prev_last.geometry().x()
+            x_start = prev_last.geometry().x() + self._labelWidth + self._elem_margin_x
 
         self.anim_group = QSequentialAnimationGroup(self)
 
@@ -412,7 +422,7 @@ class Forward(QWidget):
         self.anim_group.addAnimation(anim)
 
         anim = QPropertyAnimation(lastChar, b"pos", self)
-        anim.setEndValue(QPoint(lastChar_x_end, labelHalf_y))
+        anim.setEndValue(QPoint(x_start, y_start))
         speed = int(350*self._speedFactor.getFactor())
         anim.setDuration(speed)
         anim.start()
@@ -452,12 +462,12 @@ class Forward(QWidget):
                 x_start = self._middle_box_x_start
                 first = 0
             else:
-                x_start = x_start + self._labelWidth + self._labelMargin
+                x_start = x_start + self._labelWidth + self._elem_margin_x
 
             x_end = x_start + self._labelMargin
             anim = QPropertyAnimation(label, b"pos")
             anim.setEndValue(QPoint(x_end, y_start))
-            speed = int(350*self._speedFactor.getFactor())
+            speed = int(200*self._speedFactor.getFactor())
             anim.setDuration(speed)
             self.anim_group.addAnimation(anim)
 
@@ -465,7 +475,7 @@ class Forward(QWidget):
         self.anim_group.finished.connect(self.setAnimGroupState)
         self.anim_group.start()
 
-        speed = int(350*len(copyTable)*self._speedFactor.getFactor())
+        speed = int(200*len(copyTable)*self._speedFactor.getFactor())
         for label in copyTable:
             self.animateBackgroundColor(label, QColor("orange"), QColor("red"), duration=speed, setAnim=False)
 
@@ -553,14 +563,6 @@ class Forward(QWidget):
 
         text_rotate = iText.rotateText(self._textTable.getLastText())
         self._textTable.addText(text_rotate)
-
-
-
-    def getAnimateBackgroundColor(self, widget, start_color, end_color, duration=1000, setAnim=False):
-        duration = int(duration*self._speedFactor.getFactor())
-        anim = QVariantAnimation(widget, duration=duration, startValue=start_color, endValue=end_color, loopCount=1)
-        anim.valueChanged.connect(functools.partial(self.setLabelBackground, widget))
-        return anim
 
     def animateBackgroundColor(self, widget, start_color, end_color, duration=1000, setAnim=False):
         duration = int(duration*self._speedFactor.getFactor())
