@@ -106,12 +106,12 @@ class Gui(QMainWindow):
 
     def resetWindow(self):
         childs = self.mainFrameWidget.children()
-        print(str(childs))
+       # print(str(childs))
         for child in childs:
             print(child.objectName())
             if child.objectName() == 'Content':
                 child.deleteLater()
-        print(str(childs))
+      #  print(str(childs))
 
     def isDeleted(self, widget):
         try:
@@ -194,7 +194,7 @@ class Gui(QMainWindow):
             input = self.controlPanel.getInputText()
             self._step.reset()
             self._step.setMax(len(input))
-            print(self.mainFrameWidget.children())
+            #print(self.mainFrameWidget.children())
             if self.content is not None and not self.isDeleted(self.content):
                 for child in self.content.children():
                     child.deleteLater()
@@ -229,8 +229,14 @@ class Gui(QMainWindow):
 
             self.content = b_view(self, encode, index)
             self.content.setGeo(QRect(0, self.controlPanel.getHeight(), self.win.getWindowWidth(), self.win.getWindowHeight()))
+            self.content.setDescription(DESC.backward_sort)
             self.content.setParent(self.mainFrameWidget)
             self.content.show()
+
+            self.state.setState(STATE.B_INIT)
+            self.controlPanel.connectSliderOnChange(ElemKeys.speed_slider, self.updateSpeed, self.content)
+            self.controlPanel.connectBtnOnClick(ElemKeys.next_button, self.b_next_step)
+            self.controlPanel.connectBtnOnClick(ElemKeys.prev_button, self.b_prev_step)
             self._step.printStep()
 
         if direction == Direction.choose.value:
@@ -465,7 +471,28 @@ class Gui(QMainWindow):
     #################### BACKWARDS STEP LOGIC ####################
 
     def b_next_step(self):
-        print("Next Step")
+        if not self._step.isMAX() and self.state.getState() != STATE.B_END:
+            self._step.increase()
+            self._step.printStep()
+
+            if(self.state.getState() == STATE.B_INIT):
+                self.state.printState()
+                self.content.sortText()
+                self._step.reset()
+                self.state.setState(STATE.B_SORT)
+
+            if(self.state.getState() == STATE.B_SORT):
+                self.state.printState()
+                if self._step.isMAX():
+                    self.state.setState(STATE.B_ITERATE)
+                    self._step.reset()
+                    self.content.setDescription(DESC.backward_iterate)
+                else:
+                    # self.controlPanel.toggleControlPanelBtn()
+                    # self.createAllAnimListener(self.content)
+                    index = self.content.getTextTableRef(self._step.getStep())
+                    self.content.selectSort(index)
+
 
     def b_prev_step(self):
         print("Prev Step")
