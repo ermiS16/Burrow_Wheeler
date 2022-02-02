@@ -12,7 +12,7 @@ from gui.CustomLabel import CustomLabel
 from PyQt5.QtWidgets import QWidget, QLabel
 from PyQt5.QtGui import QColor, QCursor
 from PyQt5.QtCore import Qt, QRect, QPropertyAnimation, QPoint, QSequentialAnimationGroup, QEasingCurve, \
-    QParallelAnimationGroup, QVariantAnimation, QAbstractAnimation
+    QParallelAnimationGroup, QVariantAnimation
 
 
 class Forward(QWidget):
@@ -37,6 +37,7 @@ class Forward(QWidget):
         self._encode = ""
         self._index = None
         self._anim = 0
+        self._anim_count = 0
         self._animGroup = 0
         #self.update()
 
@@ -135,7 +136,6 @@ class Forward(QWidget):
         print("Animation State: " + str(self.anim.state()))
         self._anim = self.anim.state()
 
-
     def reset(self):
         self._utils_table.resetTable(self._table)
         self._utils_table.resetTable(self._tableSort)
@@ -185,9 +185,9 @@ class Forward(QWidget):
     def initForward(self):
         self.reset()
         self._table = []
-        self._tableSort = []
         self._tableIndex = []
-        self._tableEncode = []
+        self._tableSort = []
+        self._tableSortIndex = []
         self._textTable = TextTable()
 
         self._index = None
@@ -197,7 +197,8 @@ class Forward(QWidget):
         print(self._input_text)
         self._textTable.addText(self._input_text)
 
-        self._labelWidth = round((self._left_box_width / len(self._input_text)) / 2)
+        #self._labelWidth = round((self._left_box_width / len(self._input_text)) / 2)
+        self._labelWidth = round(self._width/100)
 
         self._labelHeight = self._labelWidth
         self._labelMargin = round(self._labelWidth * 0.75)
@@ -221,20 +222,13 @@ class Forward(QWidget):
 
         self._resultLabelMargin = self._right_box_height * 0.05
 
-        self._labelWidth = round(self._width/100)
-        self._labelHeight = self._labelWidth
 
-        self._labelMargin = round(self._width / 120)
+
         self._elem_margin_x = self._width * 0.005
-        self._elem_margin_y = self._height * 0.02
+        self._elem_margin_y = self._height * 0.04
 
         self._indexMargin = round(self._width / 50)
-        self._tableMargin = round(self._width / 4.5)
 
-        self._indexResultHeight = round(self._width / 150)
-
-        self._labelLineMargin = (self._labelHeight * 2)
-        self._labelLineMarginDouble = (self._labelHeight * 4)
 
         elemCount = 0
         for ch in self._input_text:
@@ -249,12 +243,13 @@ class Forward(QWidget):
             if elemCount == 0:
                 x_start = self._left_box_x_start
             else:
-                #x_start = x_start + self._labelWidth + self._labelMargin
                 x_start = x_start + self._labelWidth + self._elem_margin_x
 
             label.move(x_start, y_start)
             row.append(label)
+            self._textTable.addText(ch)
             elemCount = elemCount + 1
+
 
         #self.appendTable(row)
         self._table.append(row)
@@ -353,9 +348,6 @@ class Forward(QWidget):
                     self.animateBackgroundColor(label, start_color, end_color, duration=500, setAnim=True)
                 elif(i == previous):
                     self.animateBackgroundColor(label, end_color, start_color, duration=500, setAnim=True)
-
-
-
 
     def showIndex(self, row):
 
@@ -464,7 +456,7 @@ class Forward(QWidget):
             else:
                 x_start = x_start + self._labelWidth + self._elem_margin_x
 
-            x_end = x_start + self._labelMargin
+            x_end = x_start + self._elem_margin_x
             anim = QPropertyAnimation(label, b"pos")
             anim.setEndValue(QPoint(x_end, y_start))
             speed = int(200*self._speedFactor.getFactor())
@@ -570,25 +562,7 @@ class Forward(QWidget):
         self.anim.valueChanged.connect(functools.partial(self.setLabelBackground, widget))
         self.anim.stateChanged.connect(self.setAnimState)
         self.anim.finished.connect(self.setAnimState)
-
-        #self.anim.start(QAbstractAnimation.DeleteWhenStopped)
         self.anim.start()
 
     def setLabelBackground(self, widget, color):
         widget.setStyleSheet("background-color: {}; color: white;".format(color.name()))
-
-    # def animateLabelText(self, widget, start_text, end_text, duration=1000):
-    #     duration = int(duration*self._speedFactor.getFactor())
-    #     self.anim = QVariantAnimation(widget, duration=duration, startValue=start_text, endValue=end_text, loopCount=1)
-    #     self.anim.valueChanged.connect(functools.partial(self.setLabelText, widget))
-    #     #self.anim.stateChanged.connect(self.setAnimState)
-    #     #self.anim.finished.connect(self.setAnimState)
-    #     #self.anim.start(QAbstractAnimation.DeleteWhenStopped)
-    #     self.anim.start()
-
-    def setLabelText(self, widget, text):
-        widget.setText(text)
-
-    def setLabelStyle(self, table, style):
-        for label in table:
-            label.setStyleSheet(style)
