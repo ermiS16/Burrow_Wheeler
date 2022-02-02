@@ -11,6 +11,10 @@ class STATE(Enum):
     F_INDEX_SELECT = "f_index_select"
     F_INDEX_FINAL = "f_index_final"
     F_END = "f_end"
+    B_INIT = "b_init"
+    B_SORT = "b_sort"
+    B_ITERATE = "b_iterate"
+    B_END = "b_end"
 
 class State:
     def __init__(self, state):
