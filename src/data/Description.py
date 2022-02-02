@@ -8,6 +8,9 @@ class DESC(Enum):
     forward_encode = "forward_encode"
     forward_index = "forward_index"
     forward_end = "forward_end"
+    backward_sort = "backward_sort"
+    backward_iterate = "backward_iterate"
+    backward_end = "backward_end"
 
 
 class Description(QLabel):
