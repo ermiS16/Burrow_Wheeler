@@ -10,6 +10,8 @@ def getLastChar(text):
 class Text:
     def __init__(self, text):
         self._text = text
+        self._textSorted = ""
+        self._sorted_ref_dict = {}
 
     def getText(self):
         return self._text
@@ -26,6 +28,29 @@ class Text:
     def setText(self, text):
         self._text = text
 
+    def sortText(self):
+        self._textSorted = sorted(self._text)
+        textSortedTmp = self._textSorted.copy()
+        indices = [i for i, ch in enumerate(self._text) if ch in self._textSorted]
+        print(indices)
+
+        for ch in self._text:
+            index_sorted = textSortedTmp.index(ch)
+            index_rotation = self._text.index(ch)
+            self._sorted_ref_dict[index_sorted] = index_rotation
+            textSortedTmp[index_sorted] = None
+
+        self.printSortRefDict()
+
+    def getSortedText(self):
+        return self._textSorted
+
+    def getRef(self, index):
+        return self._sorted_ref_dict[index]
+
+    def printSortRefDict(self):
+        for key in self._sorted_ref_dict.keys():
+            print("Key: " + str(key) + " | Value: " + str(self._sorted_ref_dict[key]))
 
 class TextTable:
     def __init__(self):
