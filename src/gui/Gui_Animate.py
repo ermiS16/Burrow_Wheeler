@@ -2,13 +2,15 @@ import sys
 import time
 import traceback
 
+from gui.Errno import Warnings
 from gui import Utils
 from data.Description import DESC
 from gui.State import STATE, State
 from gui.ControlPanel import ControlPanel, ElemKeys, Direction
 from gui.Step import Step
 from gui.Window import Window
-from logic.Forward import Forward as f_logic
+from logic.Forward import Forward as f_view
+from logic.Backwards import Backwards as b_view
 
 from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QAction
 from PyQt5.QtGui import QColor
@@ -19,6 +21,25 @@ class AnimListenerSignals(QObject):
     finished = pyqtSignal()
     progress = pyqtSignal(int)
 
+
+class AnimAllListener(QObject):
+    def __init__(self, func, *args):
+        super(AnimListener, self).__init__()
+        self._func = func
+        self._args = list[args]
+        self._signals = AnimListenerSignals()
+
+    def run(self):
+        try:
+            while(self._func.getAnimAll() != 2):
+                time.sleep(0.001)
+            while(self._func.getAnimAll() == 2):
+                time.sleep(0.001)
+        except:
+            traceback.print_exc()
+        finally:
+            print("Finished")
+            self._signals.finished.emit()
 
 class AnimListener(QRunnable):
     def __init__(self, func, *args):
@@ -81,6 +102,8 @@ class Gui(QMainWindow):
         self._animation_finished = 0
         self.initUI()
 
+    #################### HELPER ####################
+
     def resetWindow(self):
         childs = self.mainFrameWidget.children()
         print(str(childs))
@@ -98,21 +121,11 @@ class Gui(QMainWindow):
 
         return False
 
-    def initWindow(self):
-        self.win = Window(self.screen())
-        self.window_width = self.win.getWindowWidth()
-        self.window_height = self.win.getWindowHeight()
-        self.screen_width = self.win.getScreenWidth()
-        self.screen_height = self.win.getScreenHeight()
-        self.menu_bar_height = self.menuBar().geometry().height()
+    def updateSpeed(self, content):
+        factor = ((self.speed_slider.value() / 5) ** -1)
+        content.updateSpeed(factor)
 
-        self.main_window_x_start = round(self.screen_width/2) - round(self.window_width/2)
-        self.main_window_y_start = round(self.screen_height/2) - round(self.window_height/2)
-
-        self.setGeometry(self.main_window_x_start, self.main_window_y_start, self.window_width, self.window_height)
-        self.setFixedSize(self.window_width, self.window_height)
-        self.setWindowTitle("Burrows-Wheeler Transformation")
-
+    #################### INIT GUI ####################
 
     def initUI(self):
         self.createMenu()
@@ -132,8 +145,39 @@ class Gui(QMainWindow):
 
         self.speed_slider = self.controlPanel.getElem(ElemKeys.speed_slider)
 
+
+
         self.setCentralWidget(self.mainFrameWidget)
         self.show()
+
+    def initWindow(self):
+        self.win = Window(self.screen())
+        self.window_width = self.win.getWindowWidth()
+        self.window_height = self.win.getWindowHeight()
+        self.screen_width = self.win.getScreenWidth()
+        self.screen_height = self.win.getScreenHeight()
+        self.menu_bar_height = self.menuBar().geometry().height()
+
+        self.main_window_x_start = round(self.screen_width/2) - round(self.window_width/2)
+        self.main_window_y_start = round(self.screen_height/2) - round(self.window_height/2)
+
+        self.setGeometry(self.main_window_x_start, self.main_window_y_start, self.window_width, self.window_height)
+        self.setFixedSize(self.window_width, self.window_height)
+        self.setWindowTitle("Burrows-Wheeler Transformation")
+
+    def createMenu(self):
+        exit_act = QAction('Exit', self)
+        exit_act.setShortcut('Ctrl+Q')
+        exit_act.triggered.connect(self.close)
+
+        menu_bar = self.menuBar()
+        menu_bar.setNativeMenuBar(False)
+
+        file_menu = menu_bar.addMenu('File')
+        file_menu.addAction(exit_act)
+
+
+    #################### INIT TRANSFORMATION ####################
 
     def transform(self):
         self._animation_finished = 0
@@ -155,7 +199,7 @@ class Gui(QMainWindow):
                 for child in self.content.children():
                     child.deleteLater()
 
-            self.content = f_logic(self, input)
+            self.content = f_view(self, input)
             self.content.setObjectName("Content")
 
             self.updateSpeed(self.content)
@@ -174,21 +218,25 @@ class Gui(QMainWindow):
             self._step.printStep()
 
         if direction == Direction.backwards.value:
-            pass
+            self.controlPanel.setInputText("a!iepdWkii")
+            self.controlPanel.setIndexText("2")
+
+            encode = self.controlPanel.getInputText()
+            index = self.controlPanel.getIndexText()
+
+            self._step.reset()
+            self._step.setMax(len(encode))
+
+            self.content = b_view(self, encode, index)
+            self.content.setGeo(QRect(0, self.controlPanel.getHeight(), self.win.getWindowWidth(), self.win.getWindowHeight()))
+            self.content.setParent(self.mainFrameWidget)
+            self.content.show()
+            self._step.printStep()
 
         if direction == Direction.choose.value:
             pass
 
-    def updateSpeed(self, content):
-        factor = ((self.speed_slider.value() / 5) ** -1)
-        content.updateSpeed(factor)
-
-    # def toggleControlPanelBtn(self):
-    #     print("Toggle Control Buttons")
-    #     next_btn = self.controlPanel.getElem(ElemKeys.next_button)
-    #     prev_btn = self.controlPanel.getElem(ElemKeys.prev_button)
-    #     transform_btn = self.controlPanel.getElem(ElemKeys.transform_button)
-    #     self.utils_btn.toggleButtons([next_btn, prev_btn, transform_btn])
+    #################### ANIMATION LISTENER ####################
 
     def animationFinishedAll(self):
         self._animation_finished = self._animation_finished + 1
@@ -237,7 +285,7 @@ class Gui(QMainWindow):
         anim_group_listener.setAutoDelete(True)
         self._threadpool.start(anim_group_listener)
 
-
+    #################### FORWARD STEP LOGIC ####################
 
     def f_next_step(self):
         if not self._step.isMAX() and self.state.getState() != STATE.F_END:
@@ -413,16 +461,14 @@ class Gui(QMainWindow):
             self.utils_table.deleteDirectoryEntry(resultLabel, 'index')
             self.content.setDescription(DESC.forward_index)
 
-    def createMenu(self):
-        exit_act = QAction('Exit', self)
-        exit_act.setShortcut('Ctrl+Q')
-        exit_act.triggered.connect(self.close)
 
-        menu_bar = self.menuBar()
-        menu_bar.setNativeMenuBar(False)
+    #################### BACKWARDS STEP LOGIC ####################
 
-        file_menu = menu_bar.addMenu('File')
-        file_menu.addAction(exit_act)
+    def b_next_step(self):
+        print("Next Step")
+
+    def b_prev_step(self):
+        print("Prev Step")
 
 
 app = QApplication(sys.argv)
