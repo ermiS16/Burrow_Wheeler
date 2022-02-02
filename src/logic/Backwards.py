@@ -1,10 +1,12 @@
+import functools
+
 import PyQt5
-from PyQt5.QtCore import Qt, QRect
+from PyQt5.QtCore import Qt, QRect, QVariantAnimation
 from data.Description import Description, DESC
 
 from gui.CustomLabel import CustomLabel
 from gui.Speed import Speed
-from data.iText import TextTable
+from data.iText import Text
 from gui.Utils import Table as util_t
 
 
@@ -26,15 +28,18 @@ class Backwards(QWidget):
 
         self._encode = encode_text
         self._index = index
-        self._text_table = TextTable()
+        self._text = Text(encode_text)
         self._table = []
+        self._tableIndex = []
         self._tableSort = []
 
         self._input_desc_label = {}
 
         self._description = None
-
         self._result_text = ""
+
+        self._anim = 0
+        self._animGroup = 0
 
         self.initLayout()
         self.initBackwards()
@@ -94,16 +99,46 @@ class Backwards(QWidget):
         self.initLayout()
         self.initBackwards()
 
+    def sortText(self):
+        self._text.sortText()
+
+    def getTextTableRef(self, index):
+        return self._text.getRef(index)
+
+    def getAnimGroup(self):
+        return self._animGroup
+
+    def getAnim(self):
+        return self._anim
+
+    def setAnimGroupState(self):
+        print("Animation Group State: " + str(self.anim_group.state()))
+        self._animGroup = self.anim_group.state()
+
+    def setAnimState(self):
+        print("Animation State: " + str(self.anim.state()))
+        self._anim = self.anim.state()
+
+
     def _reset(self):
         util_t.deleteLabelList(self, self._table)
+        util_t.deleteLabelList(self, self._tableIndex)
         util_t.deleteLabelList(self, self._tableSort)
         util_t.deleteDirectoryEntry(self, self._input_desc_label, 'encode')
         util_t.deleteDirectoryEntry(self, self._input_desc_label, 'index')
+        del self._text
+
+    def setDescription(self, info):
+        self._description.setDescription(info)
 
     def initBackwards(self):
         self._reset()
         self._result_text = ""
-        self._text_table = TextTable()
+        self._text = Text(self._encode)
+        self._table = []
+        self._tableIndex = []
+        self._tableSort = []
+        self._input_desc_label = {}
 
         self._labelWidth = round(self._width/100)
 
@@ -125,7 +160,7 @@ class Backwards(QWidget):
         self._description = Description(self)
         self._description.setAlignment(Qt.AlignTop)
         self._description.setWordWrap(True)
-        self._description.setDescription(DESC.forward_rotation)
+        #self._description.setDescription(DESC.forward_rotation)
         self._description.setGeometry(QRect(desc_start_x, desc_start_y, desc_width, desc_height))
         self._description.setStyleSheet(sty.getStyle(Style.descriptionStyle))
 
@@ -166,14 +201,26 @@ class Backwards(QWidget):
             index_label.resize(self._labelWidth, self._labelHeight)
 
             y_start = y_start + self._labelLineMargin
-            # if elem_count == 0:
-            #     x_start = self._left_box_x_start
-            # else:
-            #     x_start = x_start + self._labelWidth + self._elem_margin_x
             index_label.move(x_start, y_start)
+
+            self._tableIndex.append(index_label)
 
             elem_count = elem_count + 1
 
-    def sortTable(self):
-        pass
+    def selectSort(self, index):
+        print("Sort")
+        label = self._table[index]
+        print(str(label.text()))
 
+
+
+    def animateBackgroundColor(self, widget, start_color, end_color, duration=1000, setAnim=False):
+        duration = int(duration*self._speedFactor.getFactor())
+        self.anim = QVariantAnimation(widget, duration=duration, startValue=start_color, endValue=end_color, loopCount=1)
+        self.anim.valueChanged.connect(functools.partial(self.setLabelBackground, widget))
+        self.anim.stateChanged.connect(self.setAnimState)
+        self.anim.finished.connect(self.setAnimState)
+        self.anim.start()
+
+    def setLabelBackground(self, widget, color):
+        widget.setStyleSheet("background-color: {}; color: white;".format(color.name()))
