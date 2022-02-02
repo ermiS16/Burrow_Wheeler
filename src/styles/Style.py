@@ -27,7 +27,7 @@ styles = {
 }
 
 def getStyle(key):
-    print(str(styles.get(key.value)))
+    #print(str(styles.get(key.value)))
     return styles.get(key.value)
 
 def updateStyle(key, background, color):
