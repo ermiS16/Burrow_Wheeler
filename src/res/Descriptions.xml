@@ -21,4 +21,18 @@
         Ende: Die Transformation ist abgeschlossen. Das Eingabewort ist transformiert und der Index des Eingabeworts
          ist bestimmt.
     </forward_end>
+    
+    <backward_sort>
+        Sortien: Die Zeichen werden mit einem stabilen Sortierverfahren neu geordnet.
+         Ein stabiles Verfahren verändert die Reihenfolge bei Gleichheit der Zeichen nicht.
+         Die ursprüngliche Reihenfolge bei gleichen Zeichen bleibt damit erhalten.
+    </backward_sort>
+    <backward_iterate>
+        Iterieren: Der Index gibt die Position des ersten Zeichens an. Der zugehörige Index unter dem Zeichen
+         gibt die Position des jeweils nächsten Zeichens an. Nach und nach werden die Position besucht und
+         das dort liegende Zeichen an das Ergebnis-Wort angehängt.
+    </backward_iterate>
+    <backward_end>
+        Ende: Das kodierte Wort ist in seinen Ursprung zurück transformiert.
+    </backward_end>
 </Desctiptions>
