@@ -2,86 +2,50 @@ import sys
 import time
 import traceback
 
-from gui.Errno import Warnings
-from data.iText import Text, TextTable
-from gui import Utils
-from data.Description import DESC
-from gui.State import STATE, State
-from gui.ControlPanel import ControlPanel, ElemKeys, Direction
-from gui.Step import Step
-from gui.Window import Window
-from logic.Forward import Forward as f_view
-from logic.Backwards import Backwards as b_view
+from model.iText import Text, TextTable
+from model import iText
+from controller import Utils
+from model.Description import DESC
+from controller.State import STATE, State
+from view.ControlPanel import ControlPanel, ElemKeys, Direction
+from controller.Step import Step
+from controller.Window import Window
+from view.Forward import Forward as f_view
+from view.Backwards import Backwards as b_view
+from view.ColorSettings import ColorSetting
 
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QAction
+from PyQt5.QtWidgets import QWidget, QMainWindow, QAction
 from PyQt5.QtGui import QColor
 from PyQt5.QtCore import QObject, QThreadPool, QRunnable, pyqtSignal, QRect
 
+from view.ColorSettings import ColorType
 
-class AnimListenerSignals(QObject):
+
+class ListenerSignals(QObject):
     finished = pyqtSignal()
     progress = pyqtSignal(int)
+    valueChanged = pyqtSignal()
 
 
-class AnimAllListener(QObject):
+class AnimAllListener(QRunnable):
     def __init__(self, func, *args):
-        super(AnimListener, self).__init__()
+        super(AnimAllListener, self).__init__()
         self._func = func
         self._args = list[args]
-        self._signals = AnimListenerSignals()
+        self._signals = ListenerSignals()
 
     def run(self):
         try:
-            while(self._func.getAnimAll() != 2):
+            while(self._func.getAnimCounter() == 0):
                 time.sleep(0.001)
-            while(self._func.getAnimAll() == 2):
+            while(self._func.getAnimCounter() > 0):
                 time.sleep(0.001)
+
         except:
             traceback.print_exc()
         finally:
             print("Finished")
             self._signals.finished.emit()
-
-class AnimListener(QRunnable):
-    def __init__(self, func, *args):
-        super(AnimListener, self).__init__()
-        self._func = func
-        self._args = list[args]
-        self._signals = AnimListenerSignals()
-
-    def run(self):
-        t1 = time.time()
-        try:
-            while(self._func.getAnim() != 2):
-                time.sleep(0.001)
-            while(self._func.getAnim() == 2):
-                time.sleep(0.001)
-        except:
-            traceback.print_exc()
-        finally:
-            print("Finished")
-            self._signals.finished.emit()
-
-class AnimGroupListener(QRunnable):
-    def __init__(self, func, *args):
-        super(AnimGroupListener, self).__init__()
-        self._func = func
-        self._args = list[args]
-        self._signals = AnimListenerSignals()
-
-    def run(self):
-        t1 = time.time()
-        try:
-            while(self._func.getAnimGroup() != 2):
-                time.sleep(0.001)
-            while(self._func.getAnimGroup() == 2):
-                time.sleep(0.001)
-        except:
-            traceback.print_exc()
-        finally:
-            print("Finished")
-            self._signals.finished.emit()
-
 
 
 class Gui(QMainWindow):
@@ -107,12 +71,10 @@ class Gui(QMainWindow):
 
     def resetWindow(self):
         childs = self.mainFrameWidget.children()
-       # print(str(childs))
         for child in childs:
             print(child.objectName())
             if child.objectName() == 'Content':
                 child.deleteLater()
-      #  print(str(childs))
 
     def isDeleted(self, widget):
         try:
@@ -135,18 +97,19 @@ class Gui(QMainWindow):
         self.controlPanel.setObjectName('ControlPanel')
         self.controlPanel.setGeo(QRect(0, self.menu_bar_height, self.win.getWindowWidth(),
                                        int(self.win.getWindowHeight()*0.1)))
-        # self.controlPanel.setWidth(self.win.getWindowWidth())
-        # self.controlPanel.setHeight((self.win.getWindowHeight()*0.1))
-        # self.controlPanel.setY(self.menu_bar_height)
         self.controlPanel.setParent(self.mainFrameWidget)
 
         self.controlPanel.connectBtnOnClick(ElemKeys.transform_button, self.transform)
-        #self.controlPanel.connectBtnOnClick(ElemKeys.reset_button, self.resetWindow)
         self.controlPanel.show()
 
         self.speed_slider = self.controlPanel.getElem(ElemKeys.speed_slider)
 
+        self._color_edit_btn = self.controlPanel.getElem(ElemKeys.edit_color_button)
+        self.controlPanel.connectBtnOnClick(ElemKeys.edit_color_button, self.openColorSetting)
+        self._color_setting = ColorSetting()
+        self._color_setting.signals.finished.connect(self.settingClosed)
 
+        self._choose_color = self.controlPanel.getElem(ElemKeys.choose_color_combo)
 
         self.setCentralWidget(self.mainFrameWidget)
         self.show()
@@ -185,120 +148,141 @@ class Gui(QMainWindow):
         self.resetWindow()
         next_btn = self.controlPanel.getElem(ElemKeys.next_button)
         prev_btn = self.controlPanel.getElem(ElemKeys.prev_button)
-        next_btn.setEnabled(True)
-        prev_btn.setEnabled(True)
+        edit_btn = self.controlPanel.getElem(ElemKeys.edit_color_button)
 
+        input_valid = True
         direction = self.controlPanel.getDirection()
-        print(direction)
         if direction == Direction.forward.value:
 
-            input = self.controlPanel.getInputText()
-            self._step.reset()
-            self._step.setMax(len(input))
-            #print(self.mainFrameWidget.children())
-            if self.content is not None and not self.isDeleted(self.content):
-                for child in self.content.children():
-                    child.deleteLater()
+            self._f_input_text = self.controlPanel.getInputText()
+            if(len(self._f_input_text) == 0):
+                input_valid = False
 
-            self.content = f_view(self, input)
-            self.content.setObjectName("Content")
+            if input_valid:
+                next_btn.setEnabled(True)
+                prev_btn.setEnabled(True)
+                edit_btn.setEnabled(True)
+                self._textTable = TextTable()
+                self._textTable.addText(self._f_input_text)
+                self._f_result_encode = ""
+                self._f_result_index = 0
+                self._f_show_index = False
 
-            self.updateSpeed(self.content)
-            self.content.setWidth(self.win.getWindowWidth())
-            self.content.setHeight(self.win.getWindowHeight())
-            self.content.setStart(0, self.controlPanel.getHeight())
-            self.content.initLayout()
-            self.content.initForward()
-            self.content.setParent(self.mainFrameWidget)
-            self.content.show()
+                self._step.reset()
+                self._step.setMax(len(self._f_input_text))
+                if self.content is not None and not self.isDeleted(self.content):
+                    for child in self.content.children():
+                        child.deleteLater()
 
-            self.state.setState(STATE.F_ROTATION)
-            self.controlPanel.connectSliderOnChange(ElemKeys.speed_slider, self.updateSpeed, self.content)
-            self.controlPanel.connectBtnOnClick(ElemKeys.next_button, self.f_next_step)
-            self.controlPanel.connectBtnOnClick(ElemKeys.prev_button, self.f_prev_step)
-            self._step.printStep()
+                self.content = f_view(self, self._f_input_text)
+                self.content.setObjectName("Content")
+
+                self.updateSpeed(self.content)
+                self.content.setWidth(self.win.getWindowWidth())
+                self.content.setHeight(self.win.getWindowHeight())
+                self.content.setStart(0, self.controlPanel.getHeight())
+                self.content.setColorSetting(self._color_setting.getColorSettings())
+                self.content.initLayout()
+                self.content.initForward()
+                self.content.setParent(self.mainFrameWidget)
+                self.content.show()
+
+                self.state.setState(STATE.F_ROTATION)
+                self.controlPanel.connectSliderOnChange(ElemKeys.speed_slider, self.updateSpeed, self.content)
+                self.controlPanel.connectBtnOnClick(ElemKeys.next_button, self.f_next_step)
+                self.controlPanel.connectBtnOnClick(ElemKeys.prev_button, self.f_prev_step)
+                #self.controlPanel.connectBtnOnClick(ElemKeys.color_apply_button, self.updateColor)
+                self._step.printStep()
+            else:
+                print("No Valid Input")
 
         if direction == Direction.backwards.value:
 
-            self.controlPanel.setInputText("a!iepdWkii")
-            self.controlPanel.setIndexText("2")
             encode = self.controlPanel.getInputText()
-            self._b_text_input = Text(encode)
-            self._b_index_input = int(self.controlPanel.getIndexText())-1
-            self._b_result = ""
-            self._b_index_select_sorted = 0
-            self._b_decode_refs = []
+            index = self.controlPanel.getIndexText()
+            if len(encode) == 0:
+                input_valid = False
+            elif len(index) == 0:
+                input_valid = False
 
-            self._step.reset()
-            self._step.setMax(len(encode))
+            if input_valid:
+                next_btn.setEnabled(True)
+                prev_btn.setEnabled(True)
+                self._b_index_input = str(int(index)-1)
+                self._b_text_input = Text(encode)
+                self._b_result = ""
+                self._b_index_select_sorted = 0
+                self._b_decode_refs = []
 
-            if self.content is not None and not self.isDeleted(self.content):
-                for child in self.content.children():
-                    child.deleteLater()
+                self._step.reset()
+                self._step.setMax(len(encode))
 
-            self.content = b_view(self, encode, self._b_index_input)
-            self.content.setGeo(QRect(0, self.controlPanel.getHeight(), self.win.getWindowWidth(), self.win.getWindowHeight()))
-            self.content.setDescription(DESC.backward_sort)
-            self.content.setParent(self.mainFrameWidget)
-            self.content.show()
+                if self.content is not None and not self.isDeleted(self.content):
+                    for child in self.content.children():
+                        child.deleteLater()
 
-            self.state.setState(STATE.B_INIT)
-            self.controlPanel.connectSliderOnChange(ElemKeys.speed_slider, self.updateSpeed, self.content)
-            self.controlPanel.connectBtnOnClick(ElemKeys.next_button, self.b_next_step)
-            self.controlPanel.connectBtnOnClick(ElemKeys.prev_button, self.b_prev_step)
-            self._step.printStep()
+                self.content = b_view(self, encode, self._b_index_input)
+                self.updateSpeed(self.content)
+                self.content.setGeo(QRect(0, self.controlPanel.getHeight(), self.win.getWindowWidth(), self.win.getWindowHeight()))
+                self.content.setDescription(DESC.backward_sort)
+                self.content.setParent(self.mainFrameWidget)
+                self.content.show()
+
+                self.state.setState(STATE.B_INIT)
+                self.controlPanel.connectSliderOnChange(ElemKeys.speed_slider, self.updateSpeed, self.content)
+                self.controlPanel.connectBtnOnClick(ElemKeys.next_button, self.b_next_step)
+                self.controlPanel.connectBtnOnClick(ElemKeys.prev_button, self.b_prev_step)
+                self._step.printStep()
+            else:
+                print("No Valid Input")
 
         if direction == Direction.choose.value:
             pass
 
+    #################### COLOR SETTINGS & UPDATE ####################
+
+    def openColorSetting(self):
+        type = self._choose_color.currentText()
+        self.controlPanel._toggleElem(self.controlPanel.getElem(ElemKeys.choose_color_combo))
+        self.controlPanel._toggleElem(self.controlPanel.getElem(ElemKeys.edit_color_button))
+        print("Open Color Settings: {}".format(type))
+        self._color_setting.signals.valueChanged.connect(self.colorChanged)
+        self._color_setting.openSetting(type)
+        self._color_setting.show()
+
+    def settingClosed(self):
+        self._color_setting.close()
+        self.controlPanel._toggleElem(self.controlPanel.getElem(ElemKeys.choose_color_combo))
+        self.controlPanel._toggleElem(self.controlPanel.getElem(ElemKeys.edit_color_button))
+
+    def colorChanged(self):
+        self.updateColor()
+
+    def updateColor(self):
+        self.content.setColorSetting(self._color_setting.getColorSettings())
+        type = self._choose_color.currentText()
+
+        if type == ColorType.label.value:
+            self.content.updateLabelColor()
+
+        if type == ColorType.select.value:
+            self.content.updateSelectColor(self._step.getStep())
+
+        if type == ColorType.found.value:
+            self.content.updateSelectFoundColor(self._step.getStep())
+
+
     #################### ANIMATION LISTENER ####################
 
-    def animationFinishedAll(self):
-        self._animation_finished = self._animation_finished + 1
-        print("Animation finished: " + str(self._animation_finished))
-        if self._animation_finished == 2:
-            self.controlPanel.toggleControlPanelBtn()
-            self._animation_finished = 0
+    def animFinished(self):
+        self.controlPanel.toggleControlPanelBtn()
 
-    def createAllAnimListener(self, content):
-        print("Create All Anim Listener")
-        self.anim_listener = AnimListener(content)
-        self.anim_listener._signals.finished.connect(self.animationFinishedAll)
-        self.anim_listener.setAutoDelete(True)
-
-        self.anim_group_listener = AnimGroupListener(content)
-        self.anim_group_listener._signals.finished.connect(self.animationFinishedAll)
-        self.anim_group_listener.setAutoDelete(True)
+    def createAnimCountListener(self, content):
+        print("Create Anim Count Listener")
+        self.anim_listener = AnimAllListener(content)
+        self.anim_listener._signals.finished.connect(self.animFinished)
         self._threadpool.start(self.anim_listener)
-        self._threadpool.start(self.anim_group_listener)
 
-    def animationFinished(self):
-        self._animation_finished = self._animation_finished + 1
-        print("Animation finished: " + str(self._animation_finished))
-        if self._animation_finished == 1:
-            self.controlPanel.toggleControlPanelBtn()
-            self._animation_finished = 0
-
-    def createAnimListener(self, content):
-        print("Create Anim Listener")
-        anim_listener = AnimListener(content)
-        anim_listener._signals.finished.connect(self.animationFinished)
-        anim_listener.setAutoDelete(True)
-        self._threadpool.start(anim_listener)
-
-    def animationGroupFinished(self):
-        self._animation_finished = self._animation_finished + 1
-        print("Animation finished: " + str(self._animation_finished))
-        if self._animation_finished == 1:
-            self.controlPanel.toggleControlPanelBtn()
-            self._animation_finished = 0
-
-    def createAnimGroupListener(self, content):
-        print("Create Anim Group Listener")
-        anim_group_listener = AnimListener(content)
-        anim_group_listener._signals.finished.connect(self.animationFinished)
-        anim_group_listener.setAutoDelete(True)
-        self._threadpool.start(anim_group_listener)
 
     #################### FORWARD STEP LOGIC ####################
 
@@ -315,8 +299,9 @@ class Gui(QMainWindow):
                 self.content.setDescription(DESC.forward_sort)
             else:
                 self.controlPanel.toggleControlPanelBtn()
-                self.createAllAnimListener(self.content)
+                self.createAnimCountListener(self.content)
                 self.content.rotate()
+                self._textTable.addText(iText.rotateText(self._textTable.getLastText()))
 
         if(self.state.getState() == STATE.F_SORT):
             self.state.printState()
@@ -326,9 +311,9 @@ class Gui(QMainWindow):
                 self.content.setDescription(DESC.forward_encode)
             else:
                 self.controlPanel.toggleControlPanelBtn()
-                self.createAllAnimListener(self.content)
-                self.content.sortTextTable()
-                row_index = self.content.getTextTableRef(self._step.getStep())
+                self.createAnimCountListener(self.content)
+                self._textTable.sortTable()
+                row_index = self._textTable.getRef(self._step.getStep())
                 self.content.selectSortedRow(row_index, self._step.getStep())
 
         if(self.state.getState() == STATE.F_ENCODE):
@@ -339,38 +324,45 @@ class Gui(QMainWindow):
                 self.content.setDescription(DESC.forward_index)
             else:
                 self.controlPanel.toggleControlPanelBtn()
-                self.createAllAnimListener(self.content)
+                self.createAnimCountListener(self.content)
                 self.content.selectLastChar(self._step.getStep())
+                self._f_result_encode = self._f_result_encode + self._textTable.getLastChar(self._step.getStep())
 
         if(self.state.getState() == STATE.F_INDEX_SHOW):
             self.state.printState()
-            for i in range(self._step.MAX+1):
-                if i == self._step.MAX:
-                    self.state.setState(STATE.F_INDEX_SELECT)
-                    self._step.reset()
-                else:
-                    # self.controlPanel.toggleControlPanelBtn()
-                    # self.createAnimListener(self.content)
+            if not self._f_show_index:
+                self.controlPanel.toggleControlPanelBtn()
+                self.createAnimCountListener(self.content)
+                for i in range(self._step.MAX):
+                    print(i)
                     self.content.showIndex(i)
+                self._f_show_index = True
+            else:
+                self.state.setState(STATE.F_INDEX_SELECT)
+                self._step.reset()
 
         if(self.state.getState() == STATE.F_INDEX_SELECT):
             self.state.printState()
-            if(self.content.getSortedTextAtIndex(self._step.getStep()) == self.content.getInpuText()):
+            if(self._textTable.getSortedTextAtIndex(self._step.getStep()) == self._f_input_text):
                 self.controlPanel.toggleControlPanelBtn()
-                self.createAnimListener(self.content)
-                self.content.selectIndex(self._step.getStep(), "next", QColor("red"), QColor("green"))
+                self.createAnimCountListener(self.content)
+                #self.content.selectIndex(self._step.getStep(), "next", QColor("red"), QColor("green"))
+                self.content.selectIndex(self._step.getStep(), "next", found=True)
                 self.state.setState(STATE.F_INDEX_FINAL)
                 self.content.setDescription(DESC.forward_end)
             else:
                 self.controlPanel.toggleControlPanelBtn()
-                self.createAnimListener(self.content)
-                self.content.selectIndex(self._step.getStep(), "next", QColor("red"), QColor("blue"))
+                self.createAnimCountListener(self.content)
+                #self.content.selectIndex(self._step.getStep(), "next", QColor("red"), QColor("blue"))
+                self.content.selectIndex(self._step.getStep(), "next", found=False)
 
         if(self.state.getState() == STATE.F_INDEX_FINAL):
             self.state.printState()
             self.controlPanel.toggleControlPanelBtn()
-            self.createAnimGroupListener(self.content)
-            self.content.showFinalEncodeLabel()
+            self.createAnimCountListener(self.content)
+            self.content.showFinalEncodeLabel(self._f_result_encode)
+            self.controlPanel.toggleControlPanelBtn()
+            self.createAnimCountListener(self.content)
             self.content.selectFinalIndexLabel(self._step.getStep())
             self.state.setState(STATE.F_END)
 
@@ -385,10 +377,8 @@ class Gui(QMainWindow):
 
         if (self.state.getState() == STATE.F_ROTATION):
             if (self._step.getStep() > 0):
-                table = self.content.getTable()
-                self.utils_table.deleteLabelList(table[-1])
-                del table[-1]
-                self.content.removeLastText()
+                self.content.deleteLastTable()
+                self._textTable.removeLastText()
 
             next_step = self._step.getStep() - 1
             if next_step < 0:
@@ -402,14 +392,10 @@ class Gui(QMainWindow):
             self.state.printState()
 
             if (self._step.getStep() >= 0):
-                sortedTable = self.content.getSortedTable()
-                self.utils_table.deleteLabelList(sortedTable[-1])
-                del sortedTable[-1]
+                self.content.deleteLastTableSorted()
 
             if (self._step.getStep() < 0):
-                sortedTable = self.content.getSortedTable()
-                self.utils_table.deleteLabelList(sortedTable[-1])
-                del sortedTable[-1]
+                self.content.deleteLastTableSorted()
                 self.state.setState(STATE.F_ROTATION)
                 self._step.setStep((self._step.MAX - 1))
                 self.content.setDescription(DESC.forward_rotation)
@@ -418,36 +404,25 @@ class Gui(QMainWindow):
             self._step.decrease()
             self._step.printStep()
             self.state.printState()
+            self._f_result_encode = self._f_result_encode[0:-1]
 
             if (self._step.getStep() >= 0):
-                encodeTable = self.content.getEncodeTable()
-                self.utils_table.deleteLastLabel(encodeTable)
-                encode = self.content.getEncode()
-                encode = encode[0:-1]
-                self.content.setEncode(encode)
+                self.content.deleteLastEncodeLabel()
 
             if (self._step.getStep() < 0):
-                encodeTable = self.content.getEncodeTable()
-                self.utils_table.deleteLastLabel(encodeTable)
+                self.content.deleteLastEncodeLabel()
                 self.state.setState(STATE.F_SORT)
                 self._step.setStep((self._step.MAX - 1))
                 self.content.setDescription(DESC.forward_sort)
 
         elif (self.state.getState() == STATE.F_INDEX_SHOW):
             for i in range(self._step.MAX):
-                self._step.decrease()
-                self._step.printStep()
                 self.state.printState()
-                if (self._step.getStep() >= 0):
-                    indexTable = self.content.getIndexTable()
-                    self.utils_table.deleteLastLabel(indexTable)
-
-                if (self._step.getStep() < 0):
-                    indexTable = self.content.getIndexTable()
-                    self.utils_table.deleteLastLabel(indexTable)
-                    self.state.setState(STATE.F_ENCODE)
-                    self._step.setStep((self._step.MAX - 1))
-                    self.content.setDescription(DESC.forward_encode)
+                self.content.deleteIndexTable()
+                self.state.setState(STATE.F_ENCODE)
+                self._step.setStep((self._step.MAX - 1))
+                self.content.setDescription(DESC.forward_encode)
+                self._f_show_index = False
 
         elif (self.state.getState() == STATE.F_INDEX_SELECT):
             self._step.decrease()
@@ -455,25 +430,23 @@ class Gui(QMainWindow):
             self.state.printState()
             if (self._step.getStep() >= 0):
                 self.controlPanel.toggleControlPanelBtn()
-                self.createAnimListener(self.content)
-                self.content.selectIndex(self._step.getStep(), "prev", QColor("red"), QColor("blue"))
+                self.createAnimCountListener(self.content)
+                # self.content.selectIndex(self._step.getStep(), "prev", QColor("red"), QColor("blue"))
+                self.content.selectIndex(self._step.getStep(), "prev", found=False)
 
             if (self._step.getStep() < 0):
-                self.controlPanel.toggleControlPanelBtn()
-                self.createAnimListener(self.content)
-                self.content.selectIndex(self._step.getStep(), "prev", QColor("red"), QColor("blue"))
+                # self.content.selectIndex(self._step.getStep(), "prev", QColor("red"), QColor("blue"))
+                self.content.selectIndex(self._step.getStep(), "prev", found=False)
                 self.state.setState(STATE.F_INDEX_SHOW)
                 self._step.setStep((self._step.MAX - 1))
-
         elif (self.state.getState() == STATE.F_END):
             self._step.decrease()
             self._step.printStep()
             self.state.printState()
-            self.content.selectIndex(self._step.getStep(), "prev", QColor("red"), QColor("blue"))
+            # self.content.selectIndex(self._step.getStep(), "prev", QColor("red"), QColor("blue"))
+            self.content.selectIndex(self._step.getStep(), "prev", found=False)
             self.state.setState(STATE.F_INDEX_SELECT)
-            resultLabel = self.content.getResultLabel()
-            self.utils_table.deleteDirectoryEntry(resultLabel, 'encode')
-            self.utils_table.deleteDirectoryEntry(resultLabel, 'index')
+            self.content.deleteResultLabel()
             self.content.setDescription(DESC.forward_index)
 
 
@@ -487,7 +460,6 @@ class Gui(QMainWindow):
             if(self.state.getState() == STATE.B_INIT):
                 self.state.printState()
                 self._b_text_input.sortText()
-                #self.content.sortText()
                 self._step.reset()
                 self.state.setState(STATE.B_SORT)
 
@@ -498,9 +470,9 @@ class Gui(QMainWindow):
                     self._step.reset()
                     self.content.setDescription(DESC.backward_iterate)
                 else:
-                    # self.controlPanel.toggleControlPanelBtn()
-                    # self.createAllAnimListener(self.content)
                     index = self._b_text_input.getRef(self._step.getStep())
+                    self.controlPanel.toggleControlPanelBtn()
+                    self.createAnimCountListener(self.content)
                     self.content.selectSort(index)
 
             if(self.state.getState() == STATE.B_ITERATE):
@@ -514,19 +486,17 @@ class Gui(QMainWindow):
                     if self._step.getStep() == 0:
                         self._b_index_select_sorted = self._b_index_input
                     else:
-                        #self._b_index_select_sorted_prev = self._b_index_select_sorted
                         self._b_index_select_sorted = self._b_text_input.getRef(self._b_index_select_sorted)
 
                     self._b_decode_refs.append(self._b_index_select_sorted)
-                    print(self._b_decode_refs)
-
-                    print(self._b_text_input.getText(), self._b_index_select_sorted)
-                    self._b_result = self._b_result + self._b_text_input.sortedCharAt(self._b_index_select_sorted)
-                    print(self._b_result)
-                    self.content.selectSortedChar(self._b_index_select_sorted)
+                    self._b_result = self._b_result + self._b_text_input.sortedCharAt(int(self._b_index_select_sorted))
+                    self.controlPanel.toggleControlPanelBtn()
+                    self.createAnimCountListener(self.content)
+                    self.content.selectSortedChar(int(self._b_index_select_sorted))
 
             if(self.state.getState() == STATE.B_SHOW_RESULT):
-                print(self._b_result)
+                self.controlPanel.toggleControlPanelBtn()
+                self.createAnimCountListener(self.content)
                 self.content.showFinalDecodeLabel(self._b_result)
                 self.state.setState(STATE.B_END)
 
@@ -543,7 +513,6 @@ class Gui(QMainWindow):
                 self.content.removeLastSortLabel()
 
             next_step = self._step.getStep() - 1
-            print("NEXT STEP: " + str(next_step))
             if next_step < 0:
                 self._step.setStep(-1)
             else:
@@ -557,13 +526,12 @@ class Gui(QMainWindow):
             if self._step.getStep() >= 0:
                 self.content.removeLastDecodeLabel()
                 self._b_index_select_sorted = self._b_decode_refs[-2]
-                print(self._b_index_select_sorted)
                 del self._b_decode_refs[-1]
-                print(self._b_decode_refs)
 
             if self._step.getStep() < 0:
                 self.content.removeLastDecodeLabel()
                 self.state.setState(STATE.B_SORT)
+                self.content.setDescription(DESC.backward_sort)
                 self._step.setStep(self._step.MAX-1)
 
         if self.state.getState() == STATE.B_END:
@@ -572,10 +540,10 @@ class Gui(QMainWindow):
             self.content.removeResultLabel()
             self._step.setStep(self._step.MAX-1)
             self.state.setState(STATE.B_ITERATE)
+            self.content.setDescription(DESC.backward_iterate)
 
-        print("Prev Step")
+#################### APP Entry Point ####################
 
-
-app = QApplication(sys.argv)
-window = Gui()
-sys.exit(app.exec())
+# app = QApplication(sys.argv)
+# window = Gui()
+# sys.exit(app.exec())
