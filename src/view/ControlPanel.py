@@ -2,7 +2,8 @@ from PyQt5.QtWidgets import QLabel, QPushButton, QSlider, QLineEdit, QWidget, QC
 from PyQt5.QtCore import QRect, QRegExp, Qt
 from PyQt5.QtGui import QRegExpValidator
 from enum import Enum
-from gui.Errno import Warnings
+from view.ColorSettings import ColorType
+from controller.Errno import Warnings
 
 class ElemKeys(Enum):
     input_field = 'input_field'
@@ -15,6 +16,10 @@ class ElemKeys(Enum):
     speed_slider = 'speed_slider'
     reset_button = 'reset_button'
     direction_combo = 'direction_box'
+    label_color_button = 'label_color_button'
+    edit_color_button = 'edit_color_button'
+    choose_color_combo = 'choose_color_combo'
+    color_apply_button = 'color_apply_button'
 
 class Direction(Enum):
     forward = "Vorwärts"
@@ -30,7 +35,6 @@ class ControlPanel(QWidget):
         self._y = 0
         self._elem = {}
         self._controlBtnList = []
-        self.directions = [Direction.choose.value, Direction.forward.value, Direction.backwards.value]
         self.input_field_label = None
         self.delta_field_label = None
         self.input_field = None
@@ -42,6 +46,8 @@ class ControlPanel(QWidget):
         self.speed_slider = None
         self.directionCombo = None
 
+        self._directions = [Direction.choose.value, Direction.forward.value, Direction.backwards.value]
+        self._colorTypes = [ColorType.label.value, ColorType.animation.value, ColorType.select.value, ColorType.found.value]
         self._input_field_label = None
         self._delta_field_label = None
         self._input_field = None
@@ -52,6 +58,10 @@ class ControlPanel(QWidget):
         self._reset_button = None
         self._speed_slider = None
         self._directionCombo = None
+        self._labelColorButton = None
+        self._chooseColor = None
+        self._editColorButton = None
+        self._colorApplyButton = None
 
         self._COUNT_ELEM_X = 7
 
@@ -98,8 +108,6 @@ class ControlPanel(QWidget):
 
     def connectBtnOnClick(self, key, func):
         elem = self.getElem(key)
-        #print(key.value)
-        #print(elem)
         elem.disconnect()
         elem.clicked.connect(func)
 
@@ -114,17 +122,12 @@ class ControlPanel(QWidget):
         elem.currentTextChanged.connect(func)
 
     def toggleControlPanelBtn(self):
-        #print(self._controlBtnList)
         for btn in self._controlBtnList:
             self._toggleElem(btn)
-            # if btn.isEnabled():
-            #     btn.setEnabled(False)
-            # else:
-            #     btn.setEnabled(True)
 
     def toggleDeltaInput(self):
-        print(self._directionCombo.currentText, Direction.backwards.value)
-        if self._directionCombo.currentText == Direction.backwards.value:
+        print(self._directionCombo.currentText(), Direction.backwards.value)
+        if self._directionCombo.currentText() == Direction.backwards.value:
             print("Delta ON")
             self._delta_field.setEnabled(True)
         else:
@@ -170,7 +173,6 @@ class ControlPanel(QWidget):
         self._controlBtnList = []
 
     def showWarning(self, code):
-        #print(code.value)
         warning = QMessageBox(self)
         warning.setIcon(QMessageBox.Warning)
         warning.setWindowTitle("Warnung")
@@ -192,6 +194,10 @@ class ControlPanel(QWidget):
         self._removeControlElement(self._prev_button)
         self._removeControlElement(self._speed_slider)
         self._removeControlElement(self._directionCombo)
+        self._removeControlElement(self._labelColorButton)
+        self._removeControlElement(self._colorApplyButton)
+        self._removeControlElement(self._chooseColor)
+        self._removeControlElement(self._editColorButton)
         self._clearControlBtnList()
 
         self._control_panel_width = self._width
@@ -230,7 +236,7 @@ class ControlPanel(QWidget):
         delta_text_validator = QRegExpValidator(delta_text_regex)
         self._delta_field.setValidator(delta_text_validator)
         self._delta_field.setPlaceholderText("Index")
-        #self._delta_field.setEnabled(False)
+        self._delta_field.setEnabled(False)
         delta_field_width = self._delta_field.geometry().width()
 
         self._transform_button = QPushButton(self)
@@ -264,13 +270,18 @@ class ControlPanel(QWidget):
 
         self._directionCombo = QComboBox(self)
         self._directionCombo.setObjectName(ElemKeys.direction_combo.value)
-        self._directionCombo.addItems(self.directions)
-        combo_height = self._directionCombo.geometry().height()
-        # self._directionCombo.setGeometry(QRect(self._directionCombo.geometry().x(), self._directionCombo.geometry().y(),
-        #                                        self._directionCombo.sizeHint().width(),
-        #                                        combo_height))
+        self._directionCombo.addItems(self._directions)
         self._directionCombo.resize(self._directionCombo.sizeHint())
         direction_width = self._directionCombo.geometry().width()
+
+        self._chooseColor = QComboBox(self)
+        self._chooseColor.setObjectName(ElemKeys.choose_color_combo.value)
+        self._chooseColor.addItems(self._colorTypes)
+
+        self._editColorButton = QPushButton(self)
+        self._editColorButton.setText("Edit Color")
+        self._editColorButton.setEnabled(False)
+
 
         elem_all_width = (elem_margin_x * self._COUNT_ELEM_X) + input_field_width + input_field_width + \
                          transform_btn_width + next_btn_width + prev_btn_width + speed_slider_width + direction_width
@@ -316,8 +327,14 @@ class ControlPanel(QWidget):
         #print("Transform Button", x_start, delta_field_width, elem_margin_x)
         self._transform_button.move(x_start, y_start)
 
+        x_start = self._next_button.geometry().x()
+        self._chooseColor.move(x_start, y_start)
+
+        x_start = x_start + self._chooseColor.geometry().width() + elem_margin_x
+        self._editColorButton.move(x_start, y_start)
+
         self._directionCombo.model().item(0).setEnabled(False)
-        #self._directionCombo.currentTextChanged.connect(self.toggleDeltaInput)
+        self._directionCombo.currentTextChanged.connect(self.toggleDeltaInput)
 
         self.setElem(ElemKeys.input_field.value, self._input_field)
         self.setElem(ElemKeys.input_field_label.value, self._input_field_label)
@@ -328,8 +345,20 @@ class ControlPanel(QWidget):
         self.setElem(ElemKeys.prev_button.value, self._prev_button)
         self.setElem(ElemKeys.direction_combo.value, self._directionCombo)
         self.setElem(ElemKeys.speed_slider.value, self._speed_slider)
+        self.setElem(ElemKeys.label_color_button.value, self._labelColorButton)
+        self.setElem(ElemKeys.choose_color_combo.value, self._chooseColor)
+        self.setElem(ElemKeys.edit_color_button.value, self._editColorButton)
+        self.setElem(ElemKeys.color_apply_button.value, self._colorApplyButton)
 
         self._controlBtnList.append(self._transform_button)
         self._controlBtnList.append(self._next_button)
         self._controlBtnList.append(self._prev_button)
+        self._controlBtnList.append(self._editColorButton)
 
+    def openColorDialog(self):
+        color = QColorDialog.getColor()
+        self._color = color.name()
+        print(color.name())
+
+    def getLabelColor(self):
+        return self._color
