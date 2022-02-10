@@ -1,14 +1,12 @@
 import functools
-import time
 
-from data.iText import TextTable
-from data import iText
-from data.Description import DESC, Description
-from gui.Speed import Speed
-from gui import Utils
+from model.Description import DESC, Description
+from controller.Speed import Speed
+from controller import Utils
 import styles.Style as sty
 from styles.Style import Style
-from gui.CustomLabel import CustomLabel
+from view.ColorSettings import Setting, ColorType
+from view.CustomLabel import CustomLabel
 from PyQt5.QtWidgets import QWidget, QLabel
 from PyQt5.QtGui import QColor, QCursor
 from PyQt5.QtCore import Qt, QRect, QPropertyAnimation, QPoint, QSequentialAnimationGroup, QEasingCurve, \
@@ -31,18 +29,43 @@ class Forward(QWidget):
         self._tableIndex = []
         self._tableEncode = []
         self._resultLabel = {}
-        self._textTable = TextTable()
         self._description = None
         self._input_text = input
-        self._encode = ""
-        self._index = None
+        self._color_setting = None
         self._anim = 0
         self._anim_count = 0
         self._animGroup = 0
-        #self.update()
+        self._animCounter = 0
 
     def updateSpeed(self, factor):
         self._speedFactor.update(factor)
+
+    def setColorSetting(self, setting):
+        self._color_setting = setting
+
+    def updateSelectColor(self, step):
+        self.selectIndex(step, 'update', found=False)
+
+    def updateSelectFoundColor(self, step):
+        self.selectIndex(step, 'update', found=True)
+
+    def updateLabelColor(self):
+        for list in self._table:
+            self.setLabelStyle(list)
+
+        for list in self._tableSort:
+            self.setLabelStyle(list)
+
+        self.setLabelStyle(self._tableEncode)
+
+    def setLabelStyle(self, list):
+        style = self._color_setting.get(Setting.label_style.value)
+        for label in list:
+            self.setStyle(label, style)
+
+
+    def setStyle(self, label, style):
+        label.setStyleSheet(style)
 
     def setStart(self, x, y):
         self._x = x
@@ -64,77 +87,38 @@ class Forward(QWidget):
         self.initLayout()
         self.initForward()
 
-    def sortTextTable(self):
-        self._textTable.sortTable()
+    def deleteLastTable(self):
+        self._utils_table.deleteLabelList(self._table[-1])
+        del self._table[-1]
 
-    def getTextTableRef(self, index):
-        return self._textTable.getRef(index)
+    def deleteLastTableSorted(self):
+        self._utils_table.deleteLabelList(self._tableSort[-1])
+        del self._tableSort[-1]
 
-    def getSortedTextAtIndex(self, index):
-        return self._textTable.getSortedTextAtIndex(index)
+    def deleteLastEncodeLabel(self):
+        self._utils_table.deleteLastLabel(self._tableEncode)
 
-    def removeLastText(self):
-        self._textTable.removeLastText()
 
-    def getInpuText(self):
-        return self._input_text
-
-    def getTable(self):
-        return self._table
-
-    def appendTable(self, elem):
-        self._table.append(elem)
-
-    def appendSortedTable(self, elem):
-        self._tableSort.append(elem)
-
-    def appendIndexTable(self, elem):
-        self._tableIndex.append(elem)
-
-    def appendEncodeTable(self, elem):
-        self._tableEncode.append(elem)
-
-    def getSortedTable(self):
-        return self._tableSort
-
-    def getEncodeTable(self):
-        return self._tableEncode
-
-    def getEncode(self):
-        return self._encode
-
-    def setEncode(self, encode):
-        self._encode = encode
-
-    def getIndexTable(self):
-        return self._tableIndex
-
-    def getIndex(self):
-        return self._index
-
-    def setIndex(self, index):
-        self._index = index
-
-    def getResultLabel(self):
-        return self._resultLabel
+    def deleteIndexTable(self):
+        self._utils_table.deleteLastLabel(self._tableIndex)
 
     def setResultLabel(self, key, val):
-        print(key, val)
         self._resultLabel[key] = val
 
-    def getAnimGroup(self):
-        return self._animGroup
+    def deleteResultLabel(self):
+        self._utils_table.deleteDirectoryEntry(self._resultLabel, 'encode')
+        self._utils_table.deleteDirectoryEntry(self._resultLabel, 'index')
 
-    def getAnim(self):
-        return self._anim
+    def animCounterIncrease(self):
+        self._animCounter = self._animCounter + 1
+        print("Increase: " + str(self._animCounter))
 
-    def setAnimGroupState(self):
-        print("Animation Group State: " + str(self.anim_group.state()))
-        self._animGroup = self.anim_group.state()
+    def animCounterDecrease(self):
+        self._animCounter = self._animCounter - 1
+        print("Decrease: " + str(self._animCounter))
 
-    def setAnimState(self):
-        print("Animation State: " + str(self.anim.state()))
-        self._anim = self.anim.state()
+    def getAnimCounter(self):
+        return self._animCounter
 
     def reset(self):
         self._utils_table.resetTable(self._table)
@@ -143,7 +127,6 @@ class Forward(QWidget):
         self._utils_table.deleteDirectoryEntry(self._resultLabel, 'index')
         self._utils_table.deleteLabelList(self._tableIndex)
         self._utils_table.deleteLabelList(self._tableEncode)
-        del self._textTable
 
     def initLayout(self):
         self._margin_window_left = round(self._width * 0.025)
@@ -188,16 +171,10 @@ class Forward(QWidget):
         self._tableIndex = []
         self._tableSort = []
         self._tableSortIndex = []
-        self._textTable = TextTable()
 
-        self._index = None
-        self._encode = ""
         row = []
         text = ""
-        print(self._input_text)
-        self._textTable.addText(self._input_text)
 
-        #self._labelWidth = round((self._left_box_width / len(self._input_text)) / 2)
         self._labelWidth = round(self._width/100)
 
         self._labelHeight = self._labelWidth
@@ -222,12 +199,11 @@ class Forward(QWidget):
 
         self._resultLabelMargin = self._right_box_height * 0.05
 
-
-
         self._elem_margin_x = self._width * 0.005
         self._elem_margin_y = self._height * 0.04
 
-        self._indexMargin = round(self._width / 50)
+        #self._indexMargin = round(self._width / 50)
+        self._indexMargin = self._width * 0.03
 
 
         elemCount = 0
@@ -236,7 +212,7 @@ class Forward(QWidget):
             label.setAlignment(Qt.AlignCenter)
             label.setText(str(ch))
             text = text + str(ch)
-            label.setStyleSheet(sty.getStyle(Style.labelStyle))
+            label.setStyleSheet(self._color_setting.get(Setting.label_style.value))
             y_start = self._left_box_y_start
             label.resize(self._labelWidth, self._labelHeight)
 
@@ -247,26 +223,24 @@ class Forward(QWidget):
 
             label.move(x_start, y_start)
             row.append(label)
-            self._textTable.addText(ch)
             elemCount = elemCount + 1
 
 
-        #self.appendTable(row)
         self._table.append(row)
 
     def setDescription(self, info):
         self._description.setDescription(info)
 
-    def showFinalEncodeLabel(self):
+    def showFinalEncodeLabel(self, encode_text):
         encodeLabel = self._tableEncode[0]
         first_encode_elem_y = encodeLabel.geometry().y()
         first_encode_elem_x = encodeLabel.geometry().x()
         first_encode_elem_height = encodeLabel.geometry().height()
 
         encode = QLabel(self)
-        encode.setText("Encode: " + self._encode)
+        encode.setText("Encode: " + encode_text)
         encode.setGeometry(QRect(first_encode_elem_x, first_encode_elem_y, 0, 0))
-        encode.setStyleSheet("font-weight: bold; border: 1px solid black")
+        encode.setStyleSheet(sty.getStyle(Style.resultLabelStyle))
         encode.setTextInteractionFlags(Qt.TextSelectableByMouse)
         encode.setCursor(QCursor(Qt.IBeamCursor))
         encode.show()
@@ -279,14 +253,12 @@ class Forward(QWidget):
         speed = int(self._speedFactor.getFactor()*500)
         anim.setDuration(speed)
         self.anim_group.addAnimation(anim)
-        self.anim_group.stateChanged.connect(self.setAnimGroupState)
-        self.anim_group.finished.connect(self.setAnimGroupState)
+        self.anim_group.finished.connect(self.animCounterDecrease)
         self.anim_group.finished.connect(lambda: self.setResultLabel('encode', encode))
+        self.animCounterIncrease()
         self.anim_group.start()
-        #self._resultLabel['encode'] = encode
 
     def selectFinalIndexLabel(self, row):
-        #encodeLabel = self._resultLabel.get('encode')
         encodeLabel = self._tableEncode[0]
         first_encode_elem_y = encodeLabel.geometry().y()
         first_encode_elem_x = encodeLabel.geometry().x()
@@ -309,13 +281,15 @@ class Forward(QWidget):
         speed = int(self._speedFactor.getFactor()*500)
         anim.setDuration(speed)
         self.anim_group.addAnimation(anim)
+        self.animCounterIncrease()
+        self.anim_group.finished.connect(self.animCounterDecrease)
         self.anim_group.start()
 
 
         indexLabel = QLabel(self)
         indexLabel.setText("Index: " + str(label_val))
         indexLabel.setGeometry(QRect(first_encode_elem_x, first_encode_elem_y, 0, 0))
-        indexLabel.setStyleSheet("font-weight: bold; border: 1px solid black")
+        indexLabel.setStyleSheet(sty.getStyle(Style.resultLabelStyle))
         indexLabel.setTextInteractionFlags(Qt.TextSelectableByMouse)
         indexLabel.setCursor(QCursor(Qt.IBeamCursor))
         indexLabel.show()
@@ -327,27 +301,40 @@ class Forward(QWidget):
         speed = int(self._speedFactor.getFactor()*500)
         anim.setDuration(speed)
         self.anim_group.addAnimation(anim)
-        self.anim_group.stateChanged.connect(self.setAnimGroupState)
-        self.anim_group.finished.connect(self.setAnimGroupState)
+        self.anim_group.finished.connect(self.animCounterDecrease)
         self.anim_group.finished.connect(lambda: self.setResultLabel('index', indexLabel))
+        self.animCounterIncrease()
         self.anim_group.start()
 
-        #self._resultLabel['index'] = indexLabel
 
 
-
-    def selectIndex(self, row, direction, start_color, end_color):
+    #def selectIndex(self, row, direction, start_color, end_color):
+    def selectIndex(self, row, direction, found=False):
         if direction == 'next':
             previous = row-1
         if direction == 'prev':
             previous = row+1
+        if direction == 'update':
+            previous = -1
+
+        if found:
+            start_color_background = QColor(self._color_setting.get(Setting.label_background.value))
+            end_color_background = QColor(self._color_setting.get(Setting.label_select_found_background.value))
+            start_color_text = QColor(self._color_setting.get(Setting.label_text.value))
+            end_color_text = QColor(self._color_setting.get(Setting.label_select_found_text.value))
+        else:
+            start_color_background = QColor(self._color_setting.get(Setting.label_background.value))
+            end_color_background = QColor(self._color_setting.get(Setting.label_select_background.value))
+            start_color_text = QColor(self._color_setting.get(Setting.label_text.value))
+            end_color_text = QColor(self._color_setting.get(Setting.label_select_text.value))
+
 
         for i in range(len(self._tableSort)):
             for label in self._tableSort[i]:
                 if(i == row):
-                    self.animateBackgroundColor(label, start_color, end_color, duration=500, setAnim=True)
+                    self.animateBackgroundColor(label, start_color_background, end_color_background, start_color_text, end_color_text, duration=500)
                 elif(i == previous):
-                    self.animateBackgroundColor(label, end_color, start_color, duration=500, setAnim=True)
+                    self.animateBackgroundColor(label, end_color_background, start_color_background, end_color_text, start_color_text, duration=500)
 
     def showIndex(self, row):
 
@@ -365,14 +352,14 @@ class Forward(QWidget):
         indexLabel.show()
         self.anim = QPropertyAnimation(indexLabel, b"geometry", self)
         self.anim.setEndValue(QRect(indexLabel.geometry().x(), indexLabel.geometry().y(), indexLabel.sizeHint().width(),
-                               self._labelHeight))
+                                    self._labelHeight))
         speed = int(500*self._speedFactor.getFactor())
         self.anim.setDuration(speed)
-        self.anim.stateChanged.connect(self.setAnimState)
-        self.anim.finished.connect(self.setAnimState)
+        self.anim.finished.connect(self.animCounterDecrease)
+        self.animCounterIncrease()
         self.anim.start()
 
-        self.appendIndexTable(indexLabel)
+        self._tableIndex.append(indexLabel)
 
 
     def selectLastChar(self, row_index):
@@ -383,12 +370,11 @@ class Forward(QWidget):
         lastChar = QLabel(self)
         lastChar.setAlignment(Qt.AlignCenter)
         lastChar.setText(lastLabel.text())
-        lastChar.setStyleSheet("background-color:red; color: white;")
+        lastChar.setStyleSheet(self._color_setting.get(Setting.label_animation_style.value))
         lastChar.resize(self._labelWidth, self._labelHeight)
         lastChar.move(lastLabel.geometry().x(), lastLabel.geometry().y())
         lastChar.show()
 
-        tableIndexHalf = round(len(self._tableSort)/2)
         y_start = round(self._right_box_height / 2)
         if(len(self._tableEncode) == 0):
             x_start = self._right_box_x_start
@@ -420,14 +406,19 @@ class Forward(QWidget):
         anim.start()
 
         self.anim_group.addAnimation(anim)
-        self.anim_group.stateChanged.connect(self.setAnimGroupState)
-        self.anim_group.finished.connect(self.setAnimGroupState)
+        self.anim_group.finished.connect(self.animCounterDecrease)
+        self.animCounterIncrease()
         self.anim_group.start()
 
         speed = int(350*self._speedFactor.getFactor())
-        self.animateBackgroundColor(lastChar, QColor("orange"), QColor("red"), duration=speed, setAnim=False)
-        self.appendEncodeTable(lastChar)
-        self.setEncode((self._encode + lastLabel.text()))
+        start_color_background = QColor(self._color_setting.get(Setting.label_animation_background.value))
+        start_color_text = QColor(self._color_setting.get(Setting.label_animation_text.value))
+        end_color_background = QColor(self._color_setting.get(Setting.label_background.value))
+        end_color_text = QColor(self._color_setting.get(Setting.label_text.value))
+        self.animateBackgroundColor(lastChar, start_color_background, end_color_background, start_color_text,
+                                    end_color_text, duration=speed)
+
+        self._tableEncode.append(lastChar)
 
 
     def selectSortedRow(self, row_index, step):
@@ -440,7 +431,8 @@ class Forward(QWidget):
             labelCopy = QLabel(self)
             labelCopy.setAlignment(Qt.AlignCenter)
             labelCopy.setText(str(label.text()))
-            labelCopy.setStyleSheet("background-color:red; color:white;")
+            #labelCopy.setStyleSheet(sty.getStyle(Style.labelStyleInit))
+            labelCopy.setStyleSheet(self._color_setting.get(Setting.label_animation_style.value))
             labelCopy.resize(self._labelWidth, self._labelHeight)
             labelCopy.move(label.geometry().x(), label.geometry().y())
             labelCopy.show()
@@ -463,27 +455,33 @@ class Forward(QWidget):
             anim.setDuration(speed)
             self.anim_group.addAnimation(anim)
 
-        self.anim_group.stateChanged.connect(self.setAnimGroupState)
-        self.anim_group.finished.connect(self.setAnimGroupState)
+        self.anim_group.finished.connect(self.animCounterDecrease)
+        self.animCounterIncrease()
         self.anim_group.start()
 
         speed = int(200*len(copyTable)*self._speedFactor.getFactor())
         for label in copyTable:
-            self.animateBackgroundColor(label, QColor("orange"), QColor("red"), duration=speed, setAnim=False)
+            start_color_background = QColor(self._color_setting.get(Setting.label_animation_background.value))
+            start_color_text = QColor(self._color_setting.get(Setting.label_animation_text.value))
+            end_color_background = QColor(self._color_setting.get(Setting.label_background.value))
+            end_color_text = QColor(self._color_setting.get(Setting.label_text.value))
+            self.animateBackgroundColor(label, start_color_background, end_color_background, start_color_text, end_color_text, duration=speed)
 
-        self.appendSortedTable(copyTable)
+        self._tableSort.append(copyTable)
 
     def rotate(self):
         copyTable = []
         self.anim_group = QSequentialAnimationGroup(self)
-        #self.anim_group = QParallelAnimationGroup(self)
-
+        print(self._color_setting)
         table = self._table[-1]
         for label in table:
             labelCopy = CustomLabel(self)
             labelCopy.setAlignment(Qt.AlignCenter)
             labelCopy.setText(str(label.text()))
-            labelCopy.setStyleSheet(sty.getStyle(Style.labelStyleCopyInit))
+            style = self._color_setting.get(Setting.label_animation_style.value)
+            print(style)
+            labelCopy.setStyleSheet(style)
+            #labelCopy.setStyleSheet(sty.getStyle(Style.labelStyleInit))
             labelCopy.resize(self._labelWidth, self._labelHeight)
             labelCopy.move(label.geometry().x(), label.geometry().y())
             labelCopy.show()
@@ -515,7 +513,6 @@ class Forward(QWidget):
             label = copyTable[i]
             y_start = label.geometry().y()
             y_end = y_start + (label.geometry().height()*2)
-            # y_end = y_start + 50
             x_end = copyTable[i+1].geometry().x()
             anim = QPropertyAnimation(label, b"pos")
             anim.setEndValue(QPoint(x_end, y_end))
@@ -534,35 +531,49 @@ class Forward(QWidget):
         speed = int(400 * self._speedFactor.getFactor())
         anim.setDuration(speed)
         self.anim_group.addAnimation(anim)
-        self.anim_group.stateChanged.connect(self.setAnimGroupState)
-        self.anim_group.finished.connect(self.setAnimGroupState)
+        self.anim_group.finished.connect(self.animCounterDecrease)
+        self.animCounterIncrease()
         self.anim_group.start()
 
-        speed = int(400*self._speedFactor.getFactor())
-        anim_group2 = QSequentialAnimationGroup(self)
+        speed = int(400)
         for label in copyTable:
-            #anim_group2.addAnimation(self.getAnimateBackgroundColor(label, QColor("orange"), QColor("red"),
-            #                                                            duration=speed, setAnim=False))
-            self.animateBackgroundColor(label, QColor("orange"), QColor("red"), duration=speed, setAnim=False)
-
-        #self.anim_group.stateChanged.connect(self.setAnimGroupState)
-        #self.anim_group.finished.connect(self.setAnimGroupState)
-        #self.anim_group.start()
+            start_color_background = QColor(self._color_setting.get(Setting.label_animation_background.value))
+            start_color_text = QColor(self._color_setting.get(Setting.label_animation_text.value))
+            end_color_background = QColor(self._color_setting.get(Setting.label_background.value))
+            end_color_text = QColor(self._color_setting.get(Setting.label_text.value))
+            self.animateBackgroundColor(label, start_color_background, end_color_background, start_color_text, end_color_text, duration=speed)
 
         self._tableLast = copyTable.copy()
         tableRotated = self._utils_table.rotateTable(copyTable)
         self._table.append(tableRotated)
 
-        text_rotate = iText.rotateText(self._textTable.getLastText())
-        self._textTable.addText(text_rotate)
 
-    def animateBackgroundColor(self, widget, start_color, end_color, duration=1000, setAnim=False):
+    def animateBackgroundColor(self, widget, start_color, end_color, start_color_text, end_color_text, duration=1000):
         duration = int(duration*self._speedFactor.getFactor())
+
         self.anim = QVariantAnimation(widget, duration=duration, startValue=start_color, endValue=end_color, loopCount=1)
         self.anim.valueChanged.connect(functools.partial(self.setLabelBackground, widget))
-        self.anim.stateChanged.connect(self.setAnimState)
-        self.anim.finished.connect(self.setAnimState)
+        self.anim.finished.connect(self.animCounterDecrease)
+        self.animCounterIncrease()
         self.anim.start()
 
+        self.anim2 = QVariantAnimation(widget, duration=duration, startValue=start_color_text, endValue=end_color_text, loopCount=1)
+        self.anim2.valueChanged.connect(functools.partial(self.setLabelText, widget))
+        self.anim2.finished.connect(self.animCounterDecrease)
+        self.animCounterIncrease()
+        self.anim2.start()
+
+
     def setLabelBackground(self, widget, color):
-        widget.setStyleSheet("background-color: {}; color: white;".format(color.name()))
+        background = widget.styleSheet().split(";")[0]
+        text = widget.styleSheet().split(";")[1]
+        background = r"background-color: {}".format(color.name())
+        style = background + "; " + text + ";"
+        widget.setStyleSheet(style)
+
+    def setLabelText(self, widget, color):
+        background = widget.styleSheet().split(";")[0]
+        text = r"color: {}".format(color.name())
+        style = background + "; " + text + ";"
+        widget.setStyleSheet(style)
+
