@@ -12,7 +12,6 @@ class Text:
         self._text = text
         self._textSorted = ""
         self._sorted_ref_dict = {}
-        self._sorted_index_ref_dict = {}
 
     def getText(self):
         return self._text
@@ -39,27 +38,22 @@ class Text:
         self._textSorted = sorted(self._text)
         textSortedTmp = self._textSorted.copy()
         textTmp = [ch for ch in self._text]
-        indices = [i for i, ch in enumerate(self._text) if ch in self._textSorted]
-        print(indices)
         pos = 0
         for ch in self._text:
             index_sorted = textSortedTmp.index(ch)
-            print(self._text, textSortedTmp, ch, index_sorted)
             index_rotation = textTmp.index(ch)
             self._sorted_ref_dict[index_sorted] = index_rotation
-            self._sorted_index_ref_dict[index_rotation] = pos
             textSortedTmp[index_sorted] = None
             textTmp[index_rotation] = None
             pos = pos + 1
         self.printSortRefDict(self._sorted_ref_dict)
-        print()
-        self.printSortRefDict(self._sorted_index_ref_dict)
+
 
     def getSortedText(self):
         return self._textSorted
 
     def getRef(self, index):
-        return self._sorted_ref_dict[index]
+        return self._sorted_ref_dict[int(index)]
 
     def getIndexRef(self, index):
         return self._sorted_index_ref_dict[index]
@@ -100,6 +94,9 @@ class TextTable:
 
     def getSortedTextAtIndex(self, index):
         return self.sortedTable[index]
+
+    def getLastChar(self, index):
+        return self.sortedTable[index][-1]
 
     def getTextList(self):
         return self.table
