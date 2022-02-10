@@ -14,6 +14,7 @@ class STATE(Enum):
     B_INIT = "b_init"
     B_SORT = "b_sort"
     B_ITERATE = "b_iterate"
+    B_SHOW_RESULT = "b_show_result"
     B_END = "b_end"
 
 class State:

@@ -3,6 +3,7 @@ import time
 import traceback
 
 from gui.Errno import Warnings
+from data.iText import Text, TextTable
 from gui import Utils
 from data.Description import DESC
 from gui.State import STATE, State
@@ -218,16 +219,24 @@ class Gui(QMainWindow):
             self._step.printStep()
 
         if direction == Direction.backwards.value:
+
             self.controlPanel.setInputText("a!iepdWkii")
             self.controlPanel.setIndexText("2")
-
             encode = self.controlPanel.getInputText()
-            index = self.controlPanel.getIndexText()
+            self._b_text_input = Text(encode)
+            self._b_index_input = int(self.controlPanel.getIndexText())-1
+            self._b_result = ""
+            self._b_index_select_sorted = 0
+            self._b_decode_refs = []
 
             self._step.reset()
             self._step.setMax(len(encode))
 
-            self.content = b_view(self, encode, index)
+            if self.content is not None and not self.isDeleted(self.content):
+                for child in self.content.children():
+                    child.deleteLater()
+
+            self.content = b_view(self, encode, self._b_index_input)
             self.content.setGeo(QRect(0, self.controlPanel.getHeight(), self.win.getWindowWidth(), self.win.getWindowHeight()))
             self.content.setDescription(DESC.backward_sort)
             self.content.setParent(self.mainFrameWidget)
@@ -477,7 +486,8 @@ class Gui(QMainWindow):
 
             if(self.state.getState() == STATE.B_INIT):
                 self.state.printState()
-                self.content.sortText()
+                self._b_text_input.sortText()
+                #self.content.sortText()
                 self._step.reset()
                 self.state.setState(STATE.B_SORT)
 
@@ -490,11 +500,79 @@ class Gui(QMainWindow):
                 else:
                     # self.controlPanel.toggleControlPanelBtn()
                     # self.createAllAnimListener(self.content)
-                    index = self.content.getTextTableRef(self._step.getStep())
+                    index = self._b_text_input.getRef(self._step.getStep())
                     self.content.selectSort(index)
 
+            if(self.state.getState() == STATE.B_ITERATE):
+                self.state.printState()
+                self._step.printStep()
+                if self._step.isMAX():
+                    self.state.setState(STATE.B_SHOW_RESULT)
+                    self._step.reset()
+                    self.content.setDescription(DESC.backward_end)
+                else:
+                    if self._step.getStep() == 0:
+                        self._b_index_select_sorted = self._b_index_input
+                    else:
+                        #self._b_index_select_sorted_prev = self._b_index_select_sorted
+                        self._b_index_select_sorted = self._b_text_input.getRef(self._b_index_select_sorted)
+
+                    self._b_decode_refs.append(self._b_index_select_sorted)
+                    print(self._b_decode_refs)
+
+                    print(self._b_text_input.getText(), self._b_index_select_sorted)
+                    self._b_result = self._b_result + self._b_text_input.sortedCharAt(self._b_index_select_sorted)
+                    print(self._b_result)
+                    self.content.selectSortedChar(self._b_index_select_sorted)
+
+            if(self.state.getState() == STATE.B_SHOW_RESULT):
+                print(self._b_result)
+                self.content.showFinalDecodeLabel(self._b_result)
+                self.state.setState(STATE.B_END)
+
+            if(self.state.getState() == STATE.B_END):
+                self.state.printState()
+                self._step.printStep()
 
     def b_prev_step(self):
+        self.state.printState()
+        self._step.printStep()
+
+        if self.state.getState() == STATE.B_SORT:
+            if self._step.getStep() >= 0:
+                self.content.removeLastSortLabel()
+
+            next_step = self._step.getStep() - 1
+            print("NEXT STEP: " + str(next_step))
+            if next_step < 0:
+                self._step.setStep(-1)
+            else:
+                self._step.decrease()
+
+        if self.state.getState() == STATE.B_ITERATE:
+            self._step.decrease()
+            self._step.printStep()
+            self.state.printState()
+            self._b_result = self._b_result[:-1]
+            if self._step.getStep() >= 0:
+                self.content.removeLastDecodeLabel()
+                self._b_index_select_sorted = self._b_decode_refs[-2]
+                print(self._b_index_select_sorted)
+                del self._b_decode_refs[-1]
+                print(self._b_decode_refs)
+
+            if self._step.getStep() < 0:
+                self.content.removeLastDecodeLabel()
+                self.state.setState(STATE.B_SORT)
+                self._step.setStep(self._step.MAX-1)
+
+        if self.state.getState() == STATE.B_END:
+            self.state.printState()
+            self._step.printStep()
+            self.content.removeResultLabel()
+            self._step.setStep(self._step.MAX-1)
+            self.state.setState(STATE.B_ITERATE)
+
         print("Prev Step")
 
 

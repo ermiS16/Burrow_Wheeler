@@ -1,7 +1,8 @@
-from PyQt5.QtWidgets import QLabel, QPushButton, QSlider, QLineEdit, QWidget, QComboBox, QColorDialog
+from PyQt5.QtWidgets import QLabel, QPushButton, QSlider, QLineEdit, QWidget, QComboBox, QColorDialog, QMessageBox
 from PyQt5.QtCore import QRect, QRegExp, Qt
 from PyQt5.QtGui import QRegExpValidator
 from enum import Enum
+from gui.Errno import Warnings
 
 class ElemKeys(Enum):
     input_field = 'input_field'
@@ -54,7 +55,6 @@ class ControlPanel(QWidget):
 
         self._COUNT_ELEM_X = 7
 
-        #self.initControlPanel()
         self.initControl()
 
     def setGeo(self, rect):
@@ -77,7 +77,6 @@ class ControlPanel(QWidget):
 
     def update(self):
         self.initControl()
-        #self.initControlPanel()
 
     def getWidth(self):
         return self.geometry().width()
@@ -99,8 +98,8 @@ class ControlPanel(QWidget):
 
     def connectBtnOnClick(self, key, func):
         elem = self.getElem(key)
-        print(key.value)
-        print(elem)
+        #print(key.value)
+        #print(elem)
         elem.disconnect()
         elem.clicked.connect(func)
 
@@ -115,12 +114,28 @@ class ControlPanel(QWidget):
         elem.currentTextChanged.connect(func)
 
     def toggleControlPanelBtn(self):
-        print(self._controlBtnList)
+        #print(self._controlBtnList)
         for btn in self._controlBtnList:
-            if btn.isEnabled():
-                btn.setEnabled(False)
-            else:
-                btn.setEnabled(True)
+            self._toggleElem(btn)
+            # if btn.isEnabled():
+            #     btn.setEnabled(False)
+            # else:
+            #     btn.setEnabled(True)
+
+    def toggleDeltaInput(self):
+        print(self._directionCombo.currentText, Direction.backwards.value)
+        if self._directionCombo.currentText == Direction.backwards.value:
+            print("Delta ON")
+            self._delta_field.setEnabled(True)
+        else:
+            print("Delta OFF")
+            self._delta_field.setEnabled(False)
+
+    def _toggleElem(self, elem):
+        if elem.isEnabled():
+            elem.setEnabled(False)
+        else:
+            elem.setEnabled(True)
 
     def getBtnList(self):
         return self._controlBtnList
@@ -134,34 +149,50 @@ class ControlPanel(QWidget):
     def getInputText(self):
         return self._input_field.text()
 
+    def setInputText(self, input):
+        self._input_field.setText(input)
+
+    def setIndexText(self, index):
+        self._delta_field.setText(index)
+
     def getDirection(self):
         return self._directionCombo.currentText()
 
-    def removeControlElement(self, elem):
+    def _removeControlElement(self, elem):
         if elem != None:
             elem.deleteLater()
             del elem
 
-    def clearControlBtnList(self):
+    def _clearControlBtnList(self):
         for btn in self._controlBtnList:
             del btn
 
         self._controlBtnList = []
 
+    def showWarning(self, code):
+        #print(code.value)
+        warning = QMessageBox(self)
+        warning.setIcon(QMessageBox.Warning)
+        warning.setWindowTitle("Warnung")
+        warning.setText(code.value)
+        warning.setStandardButtons(QMessageBox.Ok)
+        warning.buttonClicked(warning.close)
+
+
     def initControl(self):
 
         print("Control Panel", self._width, self._height)
 
-        self.removeControlElement(self._input_field_label)
-        self.removeControlElement(self._input_field)
-        self.removeControlElement(self._delta_field_label)
-        self.removeControlElement(self._delta_field)
-        self.removeControlElement(self._transform_button)
-        self.removeControlElement(self._next_button)
-        self.removeControlElement(self._prev_button)
-        self.removeControlElement(self._speed_slider)
-        self.removeControlElement(self._directionCombo)
-        self.clearControlBtnList()
+        self._removeControlElement(self._input_field_label)
+        self._removeControlElement(self._input_field)
+        self._removeControlElement(self._delta_field_label)
+        self._removeControlElement(self._delta_field)
+        self._removeControlElement(self._transform_button)
+        self._removeControlElement(self._next_button)
+        self._removeControlElement(self._prev_button)
+        self._removeControlElement(self._speed_slider)
+        self._removeControlElement(self._directionCombo)
+        self._clearControlBtnList()
 
         self._control_panel_width = self._width
         self._control_panel_height = self._width * 0.1    # (10% von Parent)
@@ -199,7 +230,7 @@ class ControlPanel(QWidget):
         delta_text_validator = QRegExpValidator(delta_text_regex)
         self._delta_field.setValidator(delta_text_validator)
         self._delta_field.setPlaceholderText("Index")
-        self._delta_field.setEnabled(False)
+        #self._delta_field.setEnabled(False)
         delta_field_width = self._delta_field.geometry().width()
 
         self._transform_button = QPushButton(self)
@@ -249,41 +280,44 @@ class ControlPanel(QWidget):
 
         x_start = control_panel_center_x - elem_all_width_half
         y_start = self._control_panel_y + control_panel_padding_top
-        print("Input Field Label", x_start, input_field_label_width, elem_margin_x)
+        #print("Input Field Label", x_start, input_field_label_width, elem_margin_x)
         self._input_field_label.move(x_start, y_start)
 
         x_start = x_start + input_field_label_width + elem_margin_x
-        print("Input Field", x_start, input_field_label_width, elem_margin_x)
+        #print("Input Field", x_start, input_field_label_width, elem_margin_x)
         self._input_field.move(x_start, y_start)
 
         x_start = x_start + input_field_width + elem_margin_x
-        print("Direction", x_start, input_field_width, elem_margin_x)
+        #print("Direction", x_start, input_field_width, elem_margin_x)
         self._directionCombo.move(x_start, y_start)
 
         x_start = x_start + direction_width + elem_margin_x
-        print("Next Button", x_start, direction_width, elem_margin_x)
+        #print("Next Button", x_start, direction_width, elem_margin_x)
         self._next_button.move(x_start, y_start)
 
         x_start = x_start + next_btn_width + elem_margin_x
-        print("Prev Button", x_start, next_btn_width, elem_margin_x)
+        #print("Prev Button", x_start, next_btn_width, elem_margin_x)
         self._prev_button.move(x_start, y_start)
 
         x_start = x_start + prev_btn_width + elem_margin_x
-        print("Speed Slider", x_start, prev_btn_width, elem_margin_x)
+        #print("Speed Slider", x_start, prev_btn_width, elem_margin_x)
         self._speed_slider.move(x_start, y_start)
 
         x_start = control_panel_center_x - elem_all_width_half
         y_start = y_start + elem_margin_y
-        print("Delta Field Label", x_start, delta_field_label_width, elem_margin_x)
+        #print("Delta Field Label", x_start, delta_field_label_width, elem_margin_x)
         self._delta_field_label.move(x_start, y_start)
 
         x_start = x_start + delta_field_label_width + elem_margin_x
-        print("Delta Field", x_start, delta_field_label_width, elem_margin_x)
+        #print("Delta Field", x_start, delta_field_label_width, elem_margin_x)
         self._delta_field.move(x_start, y_start)
 
         x_start = x_start + delta_field_width + elem_margin_x
-        print("Transform Button", x_start, delta_field_width, elem_margin_x)
+        #print("Transform Button", x_start, delta_field_width, elem_margin_x)
         self._transform_button.move(x_start, y_start)
+
+        self._directionCombo.model().item(0).setEnabled(False)
+        #self._directionCombo.currentTextChanged.connect(self.toggleDeltaInput)
 
         self.setElem(ElemKeys.input_field.value, self._input_field)
         self.setElem(ElemKeys.input_field_label.value, self._input_field_label)
