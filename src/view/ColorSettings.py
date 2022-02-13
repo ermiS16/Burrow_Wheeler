@@ -8,8 +8,12 @@ class ColorType(Enum):
     animation = 'Animation'
     select = 'Selektion'
     found = 'Gefunden'
+    default = 'Default'
 
 class Setting(Enum):
+    label_default_background = 'label_default_background'
+    label_default_text = 'label_default_text'
+    label_default_style = 'label_default_style'
     label_background = 'label_background'
     label_text = 'label_text'
     label_style = 'label_style'
@@ -32,6 +36,10 @@ class Signals(QObject):
 class ColorSetting(QWidget):
     def __init__(self):
         super().__init__()
+        self._label_default_background = "#eff0f1"
+        self._label_default_text = "black"
+        self._label_default_style = self.getStyle(ColorType.default.value)
+
         self._label_background = "red"
         self._label_text = "white"
         self._label_style = self.getStyle(ColorType.label.value)
@@ -51,7 +59,9 @@ class ColorSetting(QWidget):
         self._background_tmp = ""
         self._text_tmp = ""
 
-        self._color_settings = {'label_background': self._label_background, 'label_text': self._label_text,
+        self._color_settings = {'label_default_background': self._label_default_background, 'label_default_text': self._label_default_text,
+                                'label_default_style': self._label_default_style,
+                                'label_background': self._label_background, 'label_text': self._label_text,
                                 'label_style': self._label_style,
                                 'label_animation_background': self._label_animation_background, 'label_animation_text': self._label_animation_text,
                                 'label_animation_style': self._label_animation_style,
@@ -115,8 +125,8 @@ class ColorSetting(QWidget):
         self._close_btn.clicked.connect(self.emitFinish)
 
 
-    def getSetting(self, setting):
-        return self._color_settings.get(Setting.setting.value)
+    # def getSetting(self, setting):
+    #     return self._color_settings.get(Setting.setting.value)
 
     def initTempColors(self):
         if self._type == ColorType.label.value:
@@ -148,6 +158,9 @@ class ColorSetting(QWidget):
         if type == ColorType.found.value:
             return (self._label_select_found_background, self._label_select_found_text)
 
+        if type == ColorType.default.value:
+            return (self._label_default_background, self._label_default_text)
+
         return None
 
     def getStyle(self, type):
@@ -159,6 +172,9 @@ class ColorSetting(QWidget):
             return "background-color: {}; color: {};".format(self._label_select_background, self._label_select_text)
         if type == ColorType.found.value:
             return "background-color: {}; color: {};".format(self._label_select_found_background, self._label_select_found_text)
+        if type == ColorType.default.value:
+            return "background-color: {}; color: {};".format(self._label_default_background, self._label_default_text)
+
 
         return None
 
@@ -169,7 +185,7 @@ class ColorSetting(QWidget):
         return self._color_settings
 
     def updateColorSettings(self):
-        print("Update Color Settings")
+        #print("Update Color Settings")
         self._color_settings[Setting.label_background.value] = self._label_background
         self._color_settings[Setting.label_text.value] = self._label_text
         self._color_settings[Setting.label_style.value] = self._label_style
@@ -233,7 +249,7 @@ class ColorSetting(QWidget):
         self.signals.finished.emit()
 
     def closeEvent(self, event):
-        print("Close Event")
+        #print("Close Event")
         if self.signals.finished:
             event.accept()
         else:
