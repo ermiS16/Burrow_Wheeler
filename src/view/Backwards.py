@@ -1,14 +1,11 @@
 import functools
 import re
 
-import PyQt5
 from PyQt5.QtCore import Qt, QRect, QVariantAnimation, QSequentialAnimationGroup, QPropertyAnimation, QPoint
-from data.Description import Description, DESC
+from model.Description import Description
 
-from gui.CustomLabel import CustomLabel
-from gui.Speed import Speed
-from data.iText import Text
-from gui.Utils import Table as util_t
+from controller.Speed import Speed
+from controller.Utils import Table as util_t
 
 
 from PyQt5.QtWidgets import QWidget, QLabel
@@ -16,6 +13,8 @@ from PyQt5.QtGui import QColor, QCursor
 
 import styles.Style as sty
 from styles.Style import Style
+
+from view.ColorSettings import Setting
 
 
 class Backwards(QWidget):
@@ -43,11 +42,11 @@ class Backwards(QWidget):
         self._result_text = ""
 
         self._speedFactor = Speed()
-        self._anim = 0
-        self._animGroup = 0
+        self._color_setting = None
+        self._animCounter = 0
 
-        self.initLayout()
-        self.initBackwards()
+        # self.initLayout()
+        # self.initBackwards()
 
 
     def initLayout(self):
@@ -111,26 +110,21 @@ class Backwards(QWidget):
         return self._text.getRef(index)
 
     def setResultLabel(self, key, val):
-        print(key, val)
         self._resultLabel[key] = val
 
     def getResultLabel(self):
         return self._resultLabel
 
-    def getAnimGroup(self):
-        return self._animGroup
+    def removeResultLabel(self):
+        util_t.deleteDirectoryEntry(self, self._resultLabel, 'decode')
 
-    def getAnim(self):
-        return self._anim
+    def removeLastDecodeLabel(self):
+        util_t.deleteLastLabel(self, self._tableDecode)
 
-    def setAnimGroupState(self):
-        print("Animation Group State: " + str(self.anim_group.state()))
-        self._animGroup = self.anim_group.state()
-
-    def setAnimState(self):
-        print("Animation State: " + str(self.anim.state()))
-        self._anim = self.anim.state()
-
+    def removeLastSortLabel(self):
+        util_t.deleteLastLabel(self, self._tableSort)
+        util_t.deleteLastLabel(self, self._tableIndexSort)
+        util_t.deleteLastLabel(self, self._tableIndexSortCurrent)
 
     def _reset(self):
         util_t.deleteLabelList(self, self._table)
@@ -149,6 +143,35 @@ class Backwards(QWidget):
     def updateSpeed(self, factor):
         self._speedFactor.update(factor)
 
+    def setColorSetting(self, setting):
+        self._color_setting = setting
+
+    def updateLabelColor(self):
+
+        self.setLabelStyle(self._table)
+        self.setLabelStyle(self._tableSort)
+        self.setLabelStyle(self._tableDecode)
+
+    def setLabelStyle(self, list):
+        style = self._color_setting.get(Setting.label_style.value)
+        for label in list:
+            self.setStyle(label, style)
+
+    def setStyle(self, label, style):
+        label.setStyleSheet(style)
+
+    def updateSelectColor(self, step):
+        pass
+
+    def animCounterIncrease(self):
+        self._animCounter = self._animCounter + 1
+
+    def animCounterDecrease(self):
+        self._animCounter = self._animCounter - 1
+
+    def getAnimCounter(self):
+        return self._animCounter
+
     def initBackwards(self):
         self._reset()
         self._result_text = ""
@@ -156,6 +179,7 @@ class Backwards(QWidget):
         self._tableIndex = []
         self._tableSort = []
         self._tableIndexSort = []
+        self.__tableIndexSortCurrent = []
         self._input_desc_label = {}
         self._tableDecode = []
 
@@ -180,7 +204,6 @@ class Backwards(QWidget):
         self._description = Description(self)
         self._description.setAlignment(Qt.AlignTop)
         self._description.setWordWrap(True)
-        #self._description.setDescription(DESC.forward_rotation)
         self._description.setGeometry(QRect(desc_start_x, desc_start_y, desc_width, desc_height))
         self._description.setStyleSheet(sty.getStyle(Style.descriptionStyle))
 
@@ -204,7 +227,7 @@ class Backwards(QWidget):
             ch_label = QLabel(self)
             ch_label.setAlignment(Qt.AlignCenter)
             ch_label.setText(str(ch))
-            ch_label.setStyleSheet(sty.getStyle(Style.labelStyle))
+            ch_label.setStyleSheet(self._color_setting.get(Setting.label_style.value))
             ch_label.resize(self._labelWidth, self._labelHeight)
             if elem_count == 0:
                 x_start = x_start + encode_label_width + (self._elem_margin_x*2)
@@ -217,7 +240,6 @@ class Backwards(QWidget):
             index_label = QLabel(self)
             index_label.setAlignment(Qt.AlignCenter)
             index_label.setText(str(elem_count+1))
-            index_label.setStyleSheet(sty.getStyle(Style.labelDefaultStyle))
             index_label.resize(self._labelWidth, self._labelHeight)
 
             y_start = y_start + self._labelLineMargin
@@ -228,25 +250,22 @@ class Backwards(QWidget):
             elem_count = elem_count + 1
 
     def selectSort(self, index):
-        print("Sort")
         label = self._table[index]
         index_label = self._tableIndex[index]
-        #print(str(label.text()), str(index_label.text()))
 
         label_copy = QLabel(self)
         label_copy.setAlignment(Qt.AlignCenter)
         label_copy.setText(str(label.text()))
-        label_copy.setStyleSheet(label.styleSheet())
+        #label_copy.setStyleSheet(label.styleSheet())
+        label_copy.setStyleSheet(self._color_setting.get(Setting.label_style.value))
         label_copy.resize(self._labelWidth, self._labelHeight)
         label_copy.move(label.geometry().x(), label.geometry().y())
         label_copy.show()
 
-        self.setLabelTextColor(label_copy, QColor("red"))
-
         index_label_copy = QLabel(self)
         index_label_copy.setAlignment(Qt.AlignCenter)
         index_label_copy.setText(str(index_label.text()))
-        index_label_copy.setStyleSheet(index_label.styleSheet())
+        #index_label_copy.setStyleSheet(index_label.styleSheet())
         index_label_copy.resize(self._labelWidth, self._labelHeight)
         index_label_copy.move(index_label.geometry().x(), index_label.geometry().y())
         index_label_copy.show()
@@ -254,13 +273,12 @@ class Backwards(QWidget):
         current_index_label = QLabel(self)
         current_index_label.setAlignment(Qt.AlignCenter)
         current_index_label.setText(str("(" + str((len(self._tableIndexSortCurrent)+1)) + ")"))
-        current_index_label.setStyleSheet(index_label.styleSheet())
+        #current_index_label.setStyleSheet(index_label.styleSheet())
         current_index_label.resize(self._labelWidth, self._labelHeight)
         current_index_label.show()
 
 
         self.anim_group = QSequentialAnimationGroup(self)
-        #print(index)
         if len(self._tableSort) == 0:
             x_start = self._middle_box_x_start
             x_end = x_start + self._labelWidth + self._elem_margin_x
@@ -290,8 +308,6 @@ class Backwards(QWidget):
         anim.setDuration(speed)
         self.anim_group.addAnimation(anim)
 
-        # x_start = index_label.geometry().x()
-        # x_end = x_start + self._middle_box_x_start
         y_start = index_label.geometry().y()
 
         anim = QPropertyAnimation(index_label_copy, b"pos")
@@ -299,22 +315,29 @@ class Backwards(QWidget):
         speed = int(500 * self._speedFactor.getFactor())
         anim.setDuration(speed)
         self.anim_group.addAnimation(anim)
+
+        self.anim_group.finished.connect(self.animCounterDecrease)
+        self.animCounterIncrease()
         self.anim_group.start()
 
         speed = 500
-        self.animateBackgroundColor(label_copy, QColor("orange"), QColor("red"), duration=speed)
+        start_color_background = QColor(self._color_setting.get(Setting.label_animation_background.value))
+        start_color_text = QColor(self._color_setting.get(Setting.label_animation_text.value))
+        end_color_background = QColor(self._color_setting.get(Setting.label_background.value))
+        end_color_text = QColor(self._color_setting.get(Setting.label_text.value))
+        self.animateBackgroundColor(label_copy, start_color_background, end_color_background, start_color_text, end_color_text, duration=speed)
 
         self._tableSort.append(label_copy)
         self._tableIndexSort.append(index_label_copy)
         self._tableIndexSortCurrent.append(current_index_label)
+        #print(self._tableIndexSortCurrent)
 
     def selectSortedChar(self, index):
         label = self._tableSort[index]
-        print(index, label.text())
         label_selected = QLabel(self)
         label_selected.setAlignment(Qt.AlignCenter)
         label_selected.setText(label.text())
-        label_selected.setStyleSheet("background-color:red; color: white;")
+        label_selected.setStyleSheet(self._color_setting.get(Setting.label_style.value))
         label_selected.resize(self._labelWidth, self._labelHeight)
         label_selected.move(label.geometry().x(), label.geometry().y())
         label_selected.show()
@@ -350,13 +373,61 @@ class Backwards(QWidget):
         anim.start()
 
         self.anim_group.addAnimation(anim)
-        self.anim_group.stateChanged.connect(self.setAnimGroupState)
-        self.anim_group.finished.connect(self.setAnimGroupState)
+        self.anim_group.finished.connect(self.animCounterDecrease)
+        self.animCounterIncrease()
         self.anim_group.start()
 
         speed = 500
-        self.animateBackgroundColor(label_selected, QColor("orange"), QColor("red"), duration=speed)
+        start_color_background = QColor(self._color_setting.get(Setting.label_animation_background.value))
+        start_color_text = QColor(self._color_setting.get(Setting.label_animation_text.value))
+        end_color_background = QColor(self._color_setting.get(Setting.label_background.value))
+        end_color_text = QColor(self._color_setting.get(Setting.label_text.value))
+        self.animateBackgroundColor(label_selected, start_color_background, end_color_background, start_color_text, end_color_text, duration=speed)
+        #self.animateBackgroundColor(label_selected, QColor("orange"), QColor("red"), duration=speed)
         self._tableDecode.append(label_selected)
+
+    def selectNextSortedIndex(self, index, prev_index, direction):
+        speed = 500
+        print(index, prev_index)
+        #print(self._tableIndexSortCurrent)
+        if direction == 'next':
+            if index != None:
+                #print(index, self._tableIndexSortCurrent)
+                label = self._tableIndexSortCurrent[index]
+                start_color = QColor(self._color_setting.get(Setting.label_default_background.value))
+                end_color = QColor(self._color_setting.get(Setting.label_select_background.value))
+                start_color_text = QColor(self._color_setting.get(Setting.label_default_text.value))
+                end_color_text = QColor(self._color_setting.get(Setting.label_select_text.value))
+                self.animateBackgroundColor(label, start_color, end_color, start_color_text, end_color_text, duration=speed)
+                label.setStyleSheet(self._color_setting.get(Setting.label_select_style.value))
+
+            if prev_index != None:
+                label = self._tableIndexSortCurrent[prev_index]
+                start_color = QColor(self._color_setting.get(Setting.label_select_background.value))
+                end_color = QColor(self._color_setting.get(Setting.label_select_found_background.value))
+                start_color_text = QColor(self._color_setting.get(Setting.label_select_text.value))
+                end_color_text = QColor(self._color_setting.get(Setting.label_select_found_text.value))
+                self.animateBackgroundColor(label, start_color, end_color, start_color_text, end_color_text, duration=speed)
+                label.setStyleSheet(self._color_setting.get(Setting.label_select_style.value))
+
+        if direction == 'prev':
+            if index != None:
+                label = self._tableIndexSortCurrent[index]
+                start_color = QColor(self._color_setting.get(Setting.label_select_found_background.value))
+                end_color = QColor(self._color_setting.get(Setting.label_select_background.value))
+                start_color_text = QColor(self._color_setting.get(Setting.label_select_found_text.value))
+                end_color_text = QColor(self._color_setting.get(Setting.label_select_text.value))
+                self.animateBackgroundColor(label, start_color, end_color, start_color_text, end_color_text, duration=speed)
+                label.setStyleSheet(self._color_setting.get(Setting.label_select_style.value))
+
+            if prev_index != None:
+                label = self._tableIndexSortCurrent[prev_index]
+                start_color = QColor(self._color_setting.get(Setting.label_select_background.value))
+                end_color = QColor(self._color_setting.get(Setting.label_default_background.value))
+                start_color_text = QColor(self._color_setting.get(Setting.label_select_text.value))
+                end_color_text = QColor(self._color_setting.get(Setting.label_default_text.value))
+                self.animateBackgroundColor(label, start_color, end_color, start_color_text, end_color_text, duration=speed)
+                label.setStyleSheet(self._color_setting.get(Setting.label_select_style.value))
 
     def showFinalDecodeLabel(self, decoded):
         encodeLabel = self._tableDecode[0]
@@ -367,7 +438,7 @@ class Backwards(QWidget):
         decode = QLabel(self)
         decode.setText("Decodiert: " + decoded)
         decode.setGeometry(QRect(first_encode_elem_x, first_encode_elem_y, 0, 0))
-        decode.setStyleSheet("font-weight: bold; border: 1px solid black")
+        decode.setStyleSheet(sty.getStyle(Style.resultLabelStyle))
         decode.setTextInteractionFlags(Qt.TextSelectableByMouse)
         decode.setCursor(QCursor(Qt.IBeamCursor))
         decode.show()
@@ -380,42 +451,39 @@ class Backwards(QWidget):
         speed = int(self._speedFactor.getFactor()*500)
         anim.setDuration(speed)
         self.anim_group.addAnimation(anim)
-        self.anim_group.stateChanged.connect(self.setAnimGroupState)
-        self.anim_group.finished.connect(self.setAnimGroupState)
+        self.anim_group.finished.connect(self.animCounterDecrease)
         self.anim_group.finished.connect(lambda: self.setResultLabel('encode', decode))
+        self.animCounterIncrease()
         self.anim_group.start()
 
         self._resultLabel['decode'] = decode
 
-    def animateBackgroundColor(self, widget, start_color, end_color, duration=1000):
+
+    def animateBackgroundColor(self, widget, start_color, end_color, start_color_text, end_color_text, duration=1000):
         duration = int(duration*self._speedFactor.getFactor())
+
         self.anim = QVariantAnimation(widget, duration=duration, startValue=start_color, endValue=end_color, loopCount=1)
         self.anim.valueChanged.connect(functools.partial(self.setLabelBackground, widget))
-        self.anim.stateChanged.connect(self.setAnimState)
-        self.anim.finished.connect(self.setAnimState)
+        self.anim.finished.connect(self.animCounterDecrease)
+        self.animCounterIncrease()
         self.anim.start()
 
-
+        self.anim2 = QVariantAnimation(widget, duration=duration, startValue=start_color_text, endValue=end_color_text, loopCount=1)
+        self.anim2.valueChanged.connect(functools.partial(self.setLabelText, widget))
+        self.anim2.finished.connect(self.animCounterDecrease)
+        self.animCounterIncrease()
+        self.anim2.start()
 
     def setLabelBackground(self, widget, color):
-        widget.setStyleSheet("background-color: {}; color: white;".format(color.name()))
+        background = widget.styleSheet().split(";")[0]
+        text = widget.styleSheet().split(";")[1]
+        background = r"background-color: {}".format(color.name())
+        style = background + "; " + text + ";"
+        widget.setStyleSheet(style)
 
-    def setLabelTextColor(self, widget, color):
-        style = widget.styleSheet()
-        new = re.sub(r'; *color: \.', "", style)
-        print(new)
-        #widget.setStyleSheet("background-color: {}; color: white;".format(color.name()))
-
-
-    def removeResultLabel(self):
-        util_t.deleteDirectoryEntry(self, self._resultLabel, 'decode')
-
-    def removeLastDecodeLabel(self):
-        util_t.deleteLastLabel(self, self._tableDecode)
-
-    def removeLastSortLabel(self):
-        util_t.deleteLastLabel(self, self._tableSort)
-        util_t.deleteLastLabel(self, self._tableIndexSort)
-        util_t.deleteLastLabel(self, self._tableIndexSortCurrent)
-
+    def setLabelText(self, widget, color):
+        background = widget.styleSheet().split(";")[0]
+        text = r"color: {}".format(color.name())
+        style = background + "; " + text + ";"
+        widget.setStyleSheet(style)
 
