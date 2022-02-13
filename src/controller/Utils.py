@@ -8,8 +8,9 @@ class Table:
             del dir[key]
 
     def deleteLastLabel(self, table):
-        table[-1].deleteLater()
-        del table[-1]
+        if len(table) > 0:
+            table[-1].deleteLater()
+            del table[-1]
 
 
     def resetTable(self, table):
