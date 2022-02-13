@@ -15,7 +15,6 @@ from view.Backwards import Backwards as b_view
 from view.ColorSettings import ColorSetting
 
 from PyQt5.QtWidgets import QWidget, QMainWindow, QAction
-from PyQt5.QtGui import QColor
 from PyQt5.QtCore import QObject, QThreadPool, QRunnable, pyqtSignal, QRect
 
 from view.ColorSettings import ColorType
@@ -44,7 +43,7 @@ class AnimAllListener(QRunnable):
         except:
             traceback.print_exc()
         finally:
-            print("Finished")
+            #print("Finished")
             self._signals.finished.emit()
 
 
@@ -162,6 +161,9 @@ class Gui(QMainWindow):
                 next_btn.setEnabled(True)
                 prev_btn.setEnabled(True)
                 edit_btn.setEnabled(True)
+                typeList = [ColorType.label.value, ColorType.animation.value, ColorType.select.value, ColorType.found.value]
+                self.controlPanel.setColorTypes(typeList)
+
                 self._textTable = TextTable()
                 self._textTable.addText(self._f_input_text)
                 self._f_result_encode = ""
@@ -184,6 +186,7 @@ class Gui(QMainWindow):
                 self.content.setColorSetting(self._color_setting.getColorSettings())
                 self.content.initLayout()
                 self.content.initForward()
+
                 self.content.setParent(self.mainFrameWidget)
                 self.content.show()
 
@@ -208,6 +211,10 @@ class Gui(QMainWindow):
             if input_valid:
                 next_btn.setEnabled(True)
                 prev_btn.setEnabled(True)
+                edit_btn.setEnabled(True)
+                typeList = [ColorType.label.value, ColorType.animation.value, ColorType.select.value, ColorType.found.value]
+                self.controlPanel.setColorTypes(typeList)
+
                 self._b_index_input = str(int(index)-1)
                 self._b_text_input = Text(encode)
                 self._b_result = ""
@@ -223,7 +230,10 @@ class Gui(QMainWindow):
 
                 self.content = b_view(self, encode, self._b_index_input)
                 self.updateSpeed(self.content)
+                self.content.setColorSetting(self._color_setting.getColorSettings())
                 self.content.setGeo(QRect(0, self.controlPanel.getHeight(), self.win.getWindowWidth(), self.win.getWindowHeight()))
+                self.content.initLayout()
+                self.content.initBackwards()
                 self.content.setDescription(DESC.backward_sort)
                 self.content.setParent(self.mainFrameWidget)
                 self.content.show()
@@ -278,7 +288,6 @@ class Gui(QMainWindow):
         self.controlPanel.toggleControlPanelBtn()
 
     def createAnimCountListener(self, content):
-        print("Create Anim Count Listener")
         self.anim_listener = AnimAllListener(content)
         self.anim_listener._signals.finished.connect(self.animFinished)
         self._threadpool.start(self.anim_listener)
@@ -346,14 +355,12 @@ class Gui(QMainWindow):
             if(self._textTable.getSortedTextAtIndex(self._step.getStep()) == self._f_input_text):
                 self.controlPanel.toggleControlPanelBtn()
                 self.createAnimCountListener(self.content)
-                #self.content.selectIndex(self._step.getStep(), "next", QColor("red"), QColor("green"))
                 self.content.selectIndex(self._step.getStep(), "next", found=True)
                 self.state.setState(STATE.F_INDEX_FINAL)
                 self.content.setDescription(DESC.forward_end)
             else:
                 self.controlPanel.toggleControlPanelBtn()
                 self.createAnimCountListener(self.content)
-                #self.content.selectIndex(self._step.getStep(), "next", QColor("red"), QColor("blue"))
                 self.content.selectIndex(self._step.getStep(), "next", found=False)
 
         if(self.state.getState() == STATE.F_INDEX_FINAL):
@@ -431,11 +438,9 @@ class Gui(QMainWindow):
             if (self._step.getStep() >= 0):
                 self.controlPanel.toggleControlPanelBtn()
                 self.createAnimCountListener(self.content)
-                # self.content.selectIndex(self._step.getStep(), "prev", QColor("red"), QColor("blue"))
                 self.content.selectIndex(self._step.getStep(), "prev", found=False)
 
             if (self._step.getStep() < 0):
-                # self.content.selectIndex(self._step.getStep(), "prev", QColor("red"), QColor("blue"))
                 self.content.selectIndex(self._step.getStep(), "prev", found=False)
                 self.state.setState(STATE.F_INDEX_SHOW)
                 self._step.setStep((self._step.MAX - 1))
@@ -443,7 +448,6 @@ class Gui(QMainWindow):
             self._step.decrease()
             self._step.printStep()
             self.state.printState()
-            # self.content.selectIndex(self._step.getStep(), "prev", QColor("red"), QColor("blue"))
             self.content.selectIndex(self._step.getStep(), "prev", found=False)
             self.state.setState(STATE.F_INDEX_SELECT)
             self.content.deleteResultLabel()
@@ -474,19 +478,28 @@ class Gui(QMainWindow):
                     self.controlPanel.toggleControlPanelBtn()
                     self.createAnimCountListener(self.content)
                     self.content.selectSort(index)
+                    next_step = self._step.getStep() + 1
+                    if next_step == self._step.MAX:
+                        self.content.selectNextSortedIndex(int(self._b_index_input), None, 'next')
 
             if(self.state.getState() == STATE.B_ITERATE):
                 self.state.printState()
                 self._step.printStep()
                 if self._step.isMAX():
                     self.state.setState(STATE.B_SHOW_RESULT)
-                    self._step.reset()
                     self.content.setDescription(DESC.backward_end)
                 else:
                     if self._step.getStep() == 0:
                         self._b_index_select_sorted = self._b_index_input
+                        next_step = self._b_text_input.getRef(self._b_index_select_sorted)
+                        self.content.selectNextSortedIndex(int(next_step), int(self._b_index_select_sorted), 'next')
                     else:
                         self._b_index_select_sorted = self._b_text_input.getRef(self._b_index_select_sorted)
+                        next_step = self._b_text_input.getRef(self._b_index_select_sorted)
+                        if int(next_step) != int(self._b_index_input):
+                            self.content.selectNextSortedIndex(int(next_step), int(self._b_index_select_sorted), 'next')
+                        else:
+                            self.content.selectNextSortedIndex(None, int(self._b_index_select_sorted), 'next')
 
                     self._b_decode_refs.append(self._b_index_select_sorted)
                     self._b_result = self._b_result + self._b_text_input.sortedCharAt(int(self._b_index_select_sorted))
@@ -509,6 +522,7 @@ class Gui(QMainWindow):
         self._step.printStep()
 
         if self.state.getState() == STATE.B_SORT:
+            self.state.printState()
             if self._step.getStep() >= 0:
                 self.content.removeLastSortLabel()
 
@@ -517,33 +531,44 @@ class Gui(QMainWindow):
                 self._step.setStep(-1)
             else:
                 self._step.decrease()
+                self._step.printStep()
 
         if self.state.getState() == STATE.B_ITERATE:
-            self._step.decrease()
-            self._step.printStep()
             self.state.printState()
             self._b_result = self._b_result[:-1]
-            if self._step.getStep() >= 0:
-                self.content.removeLastDecodeLabel()
+            if len(self._b_decode_refs) > 0:
+                if self._step.isMAX():
+                    self._b_index_select_sorted = self._b_decode_refs[-1]
+                    self.content.selectNextSortedIndex(int(self._b_index_select_sorted), None, 'prev')
+                else:
+                    self._b_index_select_sorted = self._b_decode_refs[-1]
+                    next_step = self._b_text_input.getRef(self._b_index_select_sorted)
+                    self.content.selectNextSortedIndex(int(self._b_index_select_sorted), int(next_step), 'prev')
+            else:
+                self._b_index_select_sorted = self._b_index_input
+                self.content.selectNextSortedIndex(None, int(self._b_index_select_sorted), 'prev')
+
+            if len(self._b_decode_refs) > 1:
                 self._b_index_select_sorted = self._b_decode_refs[-2]
+
+            if len(self._b_decode_refs) > 0:
                 del self._b_decode_refs[-1]
 
+            self.content.removeLastDecodeLabel()
+
             if self._step.getStep() < 0:
-                self.content.removeLastDecodeLabel()
                 self.state.setState(STATE.B_SORT)
                 self.content.setDescription(DESC.backward_sort)
                 self._step.setStep(self._step.MAX-1)
+                self.content.removeLastSortLabel()
+
+            self._step.decrease()
+            self._step.printStep()
 
         if self.state.getState() == STATE.B_END:
             self.state.printState()
             self._step.printStep()
             self.content.removeResultLabel()
-            self._step.setStep(self._step.MAX-1)
             self.state.setState(STATE.B_ITERATE)
             self.content.setDescription(DESC.backward_iterate)
 
-#################### APP Entry Point ####################
-
-# app = QApplication(sys.argv)
-# window = Gui()
-# sys.exit(app.exec())
