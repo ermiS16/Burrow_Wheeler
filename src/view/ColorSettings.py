@@ -1,7 +1,11 @@
 import traceback
-from PyQt5.QtCore import QRect, Qt, pyqtSignal, QThreadPool, QRunnable, QObject
+
+from PyQt5 import QtCore, Qt
+from PyQt5.QtCore import QRect, Qt, pyqtSignal, QThreadPool, QRunnable, QObject, QSize
 from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QColorDialog
 from enum import Enum
+import styles.Style as sty
+from styles.Style import Style
 
 class ColorType(Enum):
     label = 'Label'
@@ -84,7 +88,7 @@ class ColorSetting(QWidget):
             self._window.deleteLater()
 
         self.setWindowTitle("Color Settings")
-        self.setGeometry(QRect(0, 0, 500, 500))
+
         self.loadSettings()
 
 
@@ -92,41 +96,60 @@ class ColorSetting(QWidget):
         self._info_text = "Text"
         self._info_label = "Hintergrund"
 
+        self._margin_left = self.geometry().width() * 0.05
+        self._margin_right = self.geometry().width() * 0.05
+        self._margin_top = self.geometry().height() * 0.05
+        self._margin_bottom = self.geometry().height() * 0.05
+
+
+        background_btn = QPushButton(self)
+        background_btn.setText("Hintergrundfarbe")
+        x_start = background_btn.geometry().x() + self._margin_left
+        y_start = background_btn.geometry().y() + self._margin_top
+        background_btn.resize(QSize(background_btn.sizeHint().width(), background_btn.geometry().height()))
+        background_btn.setGeometry(QRect(x_start, y_start, background_btn.geometry().width(), background_btn.geometry().height()))
+        background_btn.clicked.connect(lambda: self.setColor('background'))
+
+        text_btn = QPushButton(self)
+        text_btn.setText("Textfarbe")
+        x_start = x_start + self._margin_left + text_btn.geometry().width()
+        text_btn.setGeometry(QRect(x_start, y_start, text_btn.geometry().width(), text_btn.geometry().height()))
+        text_btn.clicked.connect(lambda: self.setColor('text'))
+
+        preview_info = QLabel(self)
+        preview_info.setText("Vorschau: ")
+        preview_info.setStyleSheet(sty.getStyle(Style.infoLabelStyle))
+        x_start = background_btn.geometry().x()
+        y_start = y_start + self._margin_bottom + preview_info.geometry().height()
+        preview_info.setGeometry(QRect(x_start, y_start, preview_info.geometry().width(), preview_info.geometry().height()))
+
         if self._previewLabel != None:
             self._previewLabel.deleteLater()
 
         self._previewLabel = QLabel(self)
         self._previewLabel.setText("Text")
         self._previewLabel.setAlignment(Qt.AlignCenter)
-        self._previewLabel.setGeometry(QRect(400, 200, 100, 50))
+        x_start = x_start + self._margin_left + self._previewLabel.geometry().width()
+        self._previewLabel.setGeometry(QRect(x_start, y_start, self._previewLabel.geometry().width(), self._previewLabel.geometry().height()))
         self.initTempColors()
         style = self.getTempStyle()
 
         self._previewLabel.setStyleSheet(style)
 
-        background_btn = QPushButton(self)
-        background_btn.setText("Hintergrund")
-        background_btn.setGeometry(QRect(100, 200, background_btn.geometry().width(), background_btn.geometry().height()))
-        background_btn.clicked.connect(lambda: self.setColor('background'))
-
-        text_btn = QPushButton(self)
-        text_btn.setText("Text")
-        text_btn.setGeometry(QRect(100, 300, text_btn.geometry().width(), text_btn.geometry().height()))
-        text_btn.clicked.connect(lambda: self.setColor('text'))
 
         self._apply_btn = QPushButton(self)
         self._apply_btn.setText("Übernehmen")
-        self._apply_btn.setGeometry(QRect(100, 400, self._apply_btn.geometry().width(), self._apply_btn.geometry().height()))
+        x_start = background_btn.geometry().x()
+        y_start = y_start + self._margin_bottom + self._apply_btn.geometry().height()
+        self._apply_btn.setGeometry(QRect(x_start, y_start, self._apply_btn.geometry().width(), self._apply_btn.geometry().height()))
         self._apply_btn.clicked.connect(self.apply)
 
         self._close_btn = QPushButton(self)
         self._close_btn.setText("Schließen")
-        self._close_btn.setGeometry(QRect(200, 400, self._close_btn.geometry().width(), self._close_btn.geometry().height()))
+        x_start = x_start + self._margin_left + self._close_btn.geometry().width()
+        self._close_btn.setGeometry(QRect(x_start, y_start, self._close_btn.geometry().width(), self._close_btn.geometry().height()))
         self._close_btn.clicked.connect(self.emitFinish)
 
-
-    # def getSetting(self, setting):
-    #     return self._color_settings.get(Setting.setting.value)
 
     def initTempColors(self):
         if self._type == ColorType.label.value:
@@ -199,7 +222,7 @@ class ColorSetting(QWidget):
         self._color_settings[Setting.label_select_found_text.value] = self._label_select_found_text
         self._color_settings[Setting.label_select_found_style.value] = self._label_select_found_style
 
-        print(self._color_settings.get(Setting.label_style.value))
+        #print(self._color_settings.get(Setting.label_style.value))
         self.signals.valueChanged.emit()
 
 

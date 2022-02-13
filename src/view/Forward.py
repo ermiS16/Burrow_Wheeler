@@ -1,5 +1,7 @@
 import functools
 
+from view.Content import Content
+
 from model.Description import DESC, Description
 from controller.Speed import Speed
 from controller import Utils
@@ -14,8 +16,10 @@ from PyQt5.QtCore import Qt, QRect, QPropertyAnimation, QPoint, QSequentialAnima
 
 
 class Forward(QWidget):
+#class Forward(Content):
     def __init__(self, arg1, input):
         super().__init__(arg1)
+        #super().__init__(self, arg1)
         self._speedFactor = Speed()
         self._x = 0
         self._y = 0
@@ -111,11 +115,9 @@ class Forward(QWidget):
 
     def animCounterIncrease(self):
         self._animCounter = self._animCounter + 1
-        print("Increase: " + str(self._animCounter))
 
     def animCounterDecrease(self):
         self._animCounter = self._animCounter - 1
-        print("Decrease: " + str(self._animCounter))
 
     def getAnimCounter(self):
         return self._animCounter
@@ -479,7 +481,6 @@ class Forward(QWidget):
             labelCopy.setAlignment(Qt.AlignCenter)
             labelCopy.setText(str(label.text()))
             style = self._color_setting.get(Setting.label_animation_style.value)
-            print(style)
             labelCopy.setStyleSheet(style)
             #labelCopy.setStyleSheet(sty.getStyle(Style.labelStyleInit))
             labelCopy.resize(self._labelWidth, self._labelHeight)
@@ -548,32 +549,31 @@ class Forward(QWidget):
         self._table.append(tableRotated)
 
 
-    def animateBackgroundColor(self, widget, start_color, end_color, start_color_text, end_color_text, duration=1000):
-        duration = int(duration*self._speedFactor.getFactor())
-
-        self.anim = QVariantAnimation(widget, duration=duration, startValue=start_color, endValue=end_color, loopCount=1)
-        self.anim.valueChanged.connect(functools.partial(self.setLabelBackground, widget))
-        self.anim.finished.connect(self.animCounterDecrease)
-        self.animCounterIncrease()
-        self.anim.start()
-
-        self.anim2 = QVariantAnimation(widget, duration=duration, startValue=start_color_text, endValue=end_color_text, loopCount=1)
-        self.anim2.valueChanged.connect(functools.partial(self.setLabelText, widget))
-        self.anim2.finished.connect(self.animCounterDecrease)
-        self.animCounterIncrease()
-        self.anim2.start()
-
-
-    def setLabelBackground(self, widget, color):
-        background = widget.styleSheet().split(";")[0]
-        text = widget.styleSheet().split(";")[1]
-        background = r"background-color: {}".format(color.name())
-        style = background + "; " + text + ";"
-        widget.setStyleSheet(style)
-
-    def setLabelText(self, widget, color):
-        background = widget.styleSheet().split(";")[0]
-        text = r"color: {}".format(color.name())
-        style = background + "; " + text + ";"
-        widget.setStyleSheet(style)
+    # def animateBackgroundColor(self, widget, start_color, end_color, start_color_text, end_color_text, duration=1000):
+    #     duration = int(duration*self._speedFactor.getFactor())
+    #
+    #     self.anim = QVariantAnimation(widget, duration=duration, startValue=start_color, endValue=end_color, loopCount=1)
+    #     self.anim.valueChanged.connect(functools.partial(self.setLabelBackground, widget))
+    #     self.anim.finished.connect(self.animCounterDecrease)
+    #     self.animCounterIncrease()
+    #     self.anim.start()
+    #
+    #     self.anim2 = QVariantAnimation(widget, duration=duration, startValue=start_color_text, endValue=end_color_text, loopCount=1)
+    #     self.anim2.valueChanged.connect(functools.partial(self.setLabelText, widget))
+    #     self.anim2.finished.connect(self.animCounterDecrease)
+    #     self.animCounterIncrease()
+    #     self.anim2.start()
+    #
+    #
+    # def setLabelBackground(self, widget, color):
+    #     text = widget.styleSheet().split(";")[1]
+    #     background = r"background-color: {}".format(color.name())
+    #     style = background + "; " + text + ";"
+    #     widget.setStyleSheet(style)
+    #
+    # def setLabelText(self, widget, color):
+    #     background = widget.styleSheet().split(";")[0]
+    #     text = r"color: {}".format(color.name())
+    #     style = background + "; " + text + ";"
+    #     widget.setStyleSheet(style)
 

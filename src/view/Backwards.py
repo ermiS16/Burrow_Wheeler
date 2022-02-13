@@ -146,6 +146,13 @@ class Backwards(QWidget):
     def setColorSetting(self, setting):
         self._color_setting = setting
 
+    def updateSelectFoundColor(self, index):
+        self.setStyle(self._tableIndexSortCurrent[index], self._color_setting.get(Setting.label_select_found_style.value))
+
+    def updateSelectColor(self, index):
+        print("Index: " + str(index))
+        self.setStyle(self._tableIndexSortCurrent[index], self._color_setting.get(Setting.label_select_style.value))
+
     def updateLabelColor(self):
 
         self.setLabelStyle(self._table)
@@ -159,9 +166,6 @@ class Backwards(QWidget):
 
     def setStyle(self, label, style):
         label.setStyleSheet(style)
-
-    def updateSelectColor(self, step):
-        pass
 
     def animCounterIncrease(self):
         self._animCounter = self._animCounter + 1

@@ -15,7 +15,7 @@ from view.Backwards import Backwards as b_view
 from view.ColorSettings import ColorSetting
 
 from PyQt5.QtWidgets import QWidget, QMainWindow, QAction
-from PyQt5.QtCore import QObject, QThreadPool, QRunnable, pyqtSignal, QRect
+from PyQt5.QtCore import QObject, QThreadPool, QRunnable, pyqtSignal, QRect, QSize, Qt
 
 from view.ColorSettings import ColorType
 
@@ -106,8 +106,20 @@ class Gui(QMainWindow):
         self._color_edit_btn = self.controlPanel.getElem(ElemKeys.edit_color_button)
         self.controlPanel.connectBtnOnClick(ElemKeys.edit_color_button, self.openColorSetting)
         self._color_setting = ColorSetting()
-        self._color_setting.signals.finished.connect(self.settingClosed)
+        setting_width = self.win.getWindowWidth()*0.15
+        setting_height = self.win.getWindowHeight()*0.15
+        self._color_setting.resize(QSize(setting_width, setting_height))
 
+        win_half_x = self.win.getWindowWidth()/2
+        win_half_y = self.win.getWindowHeight()/2
+        setting_half_x = self._color_setting.geometry().width()/2
+        setting_half_y = self._color_setting.geometry().height()/2
+
+        x_start = win_half_x - setting_half_x
+        y_start = win_half_y - setting_half_y
+        self._color_setting.move(x_start, y_start)
+
+        self._color_setting.signals.finished.connect(self.settingClosed)
         self._choose_color = self.controlPanel.getElem(ElemKeys.choose_color_combo)
 
         self.setCentralWidget(self.mainFrameWidget)
@@ -276,11 +288,23 @@ class Gui(QMainWindow):
             self.content.updateLabelColor()
 
         if type == ColorType.select.value:
-            self.content.updateSelectColor(self._step.getStep())
+            if self.controlPanel.getDirection() == Direction.forward.value:
+                self.content.updateSelectColor(self._step.getStep())
+
+            if self.controlPanel.getDirection() == Direction.backwards.value:
+                print("Update Selection Color Backwards")
+                next_step = self._b_text_input.getRef(self._b_index_select_sorted)
+                print("Index:" + str(next_step))
+                self.content.updateSelectColor(next_step)
 
         if type == ColorType.found.value:
-            self.content.updateSelectFoundColor(self._step.getStep())
+            if self.controlPanel.getDirection() == Direction.forward.value:
+                if self.state.getState() == STATE.F_END:
+                    self.content.updateSelectFoundColor(self._step.getStep())
 
+            if self.controlPanel.getDirection() == Direction.backwards.value:
+                for i in range(len(self._b_decode_refs)):
+                    self.content.updateSelectFoundColor(int(self._b_decode_refs[i]))
 
     #################### ANIMATION LISTENER ####################
 
@@ -343,7 +367,7 @@ class Gui(QMainWindow):
                 self.controlPanel.toggleControlPanelBtn()
                 self.createAnimCountListener(self.content)
                 for i in range(self._step.MAX):
-                    print(i)
+                    #print(i)
                     self.content.showIndex(i)
                 self._f_show_index = True
             else:
