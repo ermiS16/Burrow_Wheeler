@@ -106,6 +106,17 @@ class ControlPanel(QWidget):
     def getElem(self, key):
         return self._elem.get(key.value)
 
+    def removeComboBoxItems(self, combo):
+        #print("Combo Count: " + str(combo.count()))
+        for i in range(combo.count()):
+            #print(combo.itemText(0))
+            combo.removeItem(0)
+
+    def setColorTypes(self, typeList):
+        self._colorTypes = typeList
+        self.removeComboBoxItems(self._chooseColor)
+        self._chooseColor.addItems(typeList)
+
     def connectBtnOnClick(self, key, func):
         elem = self.getElem(key)
         elem.disconnect()
@@ -126,12 +137,14 @@ class ControlPanel(QWidget):
             self._toggleElem(btn)
 
     def toggleDeltaInput(self):
-        print(self._directionCombo.currentText(), Direction.backwards.value)
+        #print(self._directionCombo.currentText(), Direction.backwards.value)
         if self._directionCombo.currentText() == Direction.backwards.value:
-            print("Delta ON")
+            #print("Delta ON")
             self._delta_field.setEnabled(True)
+            self._delta_field.setText("2")
+            self._input_field.setText("a!iepdWkii")
         else:
-            print("Delta OFF")
+            #print("Delta OFF")
             self._delta_field.setEnabled(False)
 
     def _toggleElem(self, elem):
@@ -183,7 +196,7 @@ class ControlPanel(QWidget):
 
     def initControl(self):
 
-        print("Control Panel", self._width, self._height)
+        #print("Control Panel", self._width, self._height)
 
         self._removeControlElement(self._input_field_label)
         self._removeControlElement(self._input_field)
@@ -358,7 +371,7 @@ class ControlPanel(QWidget):
     def openColorDialog(self):
         color = QColorDialog.getColor()
         self._color = color.name()
-        print(color.name())
+        #print(color.name())
 
     def getLabelColor(self):
         return self._color
