@@ -1,10 +1,8 @@
-import sys
 import time
 import traceback
 
 from model.iText import Text, TextTable
 from model import iText
-from controller import Utils
 from model.Description import DESC
 from controller.State import STATE, State
 from view.ControlPanel import ControlPanel, ElemKeys, Direction
@@ -13,6 +11,7 @@ from controller.Window import Window
 from view.Forward import Forward as f_view
 from view.Backwards import Backwards as b_view
 from view.ColorSettings import ColorSetting
+from view.Warning import Warning as warn
 
 from PyQt5.QtWidgets import QWidget, QMainWindow, QAction
 from PyQt5.QtCore import QObject, QThreadPool, QRunnable, pyqtSignal, QRect, QSize, Qt
@@ -53,10 +52,6 @@ class Gui(QMainWindow):
         super().__init__()
         self.mainFrameWidget = QWidget(self)
         self.content = None
-
-        self.utils_table = Utils.Table()
-        self.utils_btn = Utils.Button()
-        self.utils_label = Utils.Label()
 
         self._step = Step(0, 0)
         self._step.printStep()
@@ -122,6 +117,8 @@ class Gui(QMainWindow):
         self._color_setting.signals.finished.connect(self.settingClosed)
         self._choose_color = self.controlPanel.getElem(ElemKeys.choose_color_combo)
 
+        self._warning = warn(self)
+
         self.setCentralWidget(self.mainFrameWidget)
         self.show()
 
@@ -168,6 +165,10 @@ class Gui(QMainWindow):
             self._f_input_text = self.controlPanel.getInputText()
             if(len(self._f_input_text) == 0):
                 input_valid = False
+                self._warning.setWindowTitle("Ungültige Eingabe")
+                self._warning.setText("Eingabe muss mindestens 3 Zeichen lang sein")
+                self._warning.show()
+
 
             if input_valid:
                 next_btn.setEnabled(True)
@@ -192,13 +193,8 @@ class Gui(QMainWindow):
                 self.content.setObjectName("Content")
 
                 self.updateSpeed(self.content)
-                self.content.setWidth(self.win.getWindowWidth())
-                self.content.setHeight(self.win.getWindowHeight())
-                self.content.setStart(0, self.controlPanel.getHeight())
                 self.content.setColorSetting(self._color_setting.getColorSettings())
-                self.content.initLayout()
-                self.content.initForward()
-
+                self.content.setGeo(QRect(0, self.controlPanel.getHeight(), self.win.getWindowWidth(), self.win.getWindowHeight()))
                 self.content.setParent(self.mainFrameWidget)
                 self.content.show()
 
@@ -215,10 +211,19 @@ class Gui(QMainWindow):
 
             encode = self.controlPanel.getInputText()
             index = self.controlPanel.getIndexText()
+
             if len(encode) == 0:
                 input_valid = False
+                self._warning.setWindowTitle("Ungültige Eingabe")
+                self._warning.setText("Eingabe muss mindestens 3 Zeichen lang sein")
+                self._warning.show()
+
             elif len(index) == 0:
                 input_valid = False
+                self._warning.setWindowTitle("Ungültige Eingabe")
+                self._warning.setText("Kein Index angegeben")
+                self._warning.show()
+
 
             if input_valid:
                 next_btn.setEnabled(True)
@@ -244,8 +249,8 @@ class Gui(QMainWindow):
                 self.updateSpeed(self.content)
                 self.content.setColorSetting(self._color_setting.getColorSettings())
                 self.content.setGeo(QRect(0, self.controlPanel.getHeight(), self.win.getWindowWidth(), self.win.getWindowHeight()))
-                self.content.initLayout()
-                self.content.initBackwards()
+                # self.content.initLayout()
+                # self.content.initBackwards()
                 self.content.setDescription(DESC.backward_sort)
                 self.content.setParent(self.mainFrameWidget)
                 self.content.show()
@@ -256,10 +261,13 @@ class Gui(QMainWindow):
                 self.controlPanel.connectBtnOnClick(ElemKeys.prev_button, self.b_prev_step)
                 self._step.printStep()
             else:
-                print("No Valid Input")
+                pass
 
         if direction == Direction.choose.value:
-            pass
+            self._warning = warn(self)
+            self._warning.setWindowTitle("Keine Richtung")
+            self._warning.setText("Bitte Richtung auswählen")
+            self._warning.show()
 
     #################### COLOR SETTINGS & UPDATE ####################
 
@@ -285,11 +293,18 @@ class Gui(QMainWindow):
         type = self._choose_color.currentText()
 
         if type == ColorType.label.value:
-            self.content.updateLabelColor()
+            if self.controlPanel.getDirection() == Direction.forward.value:
+                if self.state.getState() == STATE.F_INDEX_SELECT:
+                    self.content.updateLabelColor(ignore=self._step.getStep())
+                else:
+                    self.content.updateLabelColor()
+            else:
+                self.content.updateLabelColor()
 
         if type == ColorType.select.value:
             if self.controlPanel.getDirection() == Direction.forward.value:
-                self.content.updateSelectColor(self._step.getStep())
+                if self.state.getState() == STATE.F_INDEX_SELECT:
+                    self.content.updateSelectColor(self._step.getStep())
 
             if self.controlPanel.getDirection() == Direction.backwards.value:
                 print("Update Selection Color Backwards")
@@ -592,7 +607,7 @@ class Gui(QMainWindow):
         if self.state.getState() == STATE.B_END:
             self.state.printState()
             self._step.printStep()
-            self.content.removeResultLabel()
+            self.content.deleteResultLabel()
             self.state.setState(STATE.B_ITERATE)
             self.content.setDescription(DESC.backward_iterate)
 
