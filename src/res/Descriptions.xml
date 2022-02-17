@@ -1,38 +1,79 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Desctiptions>
+    <init>
+        Herzlich Willkommen bei der Burrows-Wheeler Transformation.
+
+        Vorwärtstransformation:
+
+        1.) Für die Vorwärtstransformtation die Richtung "Vorwärts" auswählen.
+        2.) Eingabewort ausfüllen. Das Wort muss zwischen 3 und 15 Zeichen lang sein.
+        3.) Auf Transformieren klicken.
+
+        Rückwärtstransformation:
+
+        1.) Für die Rückwärtstransformation die Richtung "Rückwärts" auswählen.
+        2.) Eingabewort ausfüllen. Das Wort muss zwischen 3 und 15 Zeichen lang sein.
+        3.) Index eingeben.
+        4.) Auf Transformieren klicken.
+
+        Über die Buttons "Weiter" und "Zurück" können Sie einzelnen Schritte
+        der Transformation im Detail betrachten.
+        Die Geschwindigkeit der Animationen lässt sich über den Schieberegler oben
+        rechts beeinflussen. Änderungen werden erst nach Ende einer Animation übernommen.
+
+        Es lassen sich verschiedene Farbsettings einstellen. Dazu über das Drop-Down-Menü
+        die Art des Farbsettings auswählen und dann auc den Button "Farbe editieren" klicken.
+    </init>
+
     <forward_rotation>
-        Rotation: Im ersten Schritt wird das Eingabewort rotiert und die einzelnen Rotationen in einer Tabelle gespeichert.
+        Rotation:
+
+        Im ersten Schritt wird das Eingabewort rotiert und die einzelnen Rotationen in einer Tabelle gespeichert.
     </forward_rotation>
     <forward_sort>
-        Sortieren: Die Einträge in der Tabelle werden alphabetisch mit einem stabilen Sortierverfahren neu geordnet.
-         Ein stabiles Verfahren verändert die Reihenfolge bei Gleichheit nicht.
-         Damit bleibt die ursprüngliche Reihenfolge erhalten.
+        Sortieren:
+
+        Die Einträge in der Tabelle werden alphabetisch mit einem stabilen Sortierverfahren neu geordnet.
+        Ein stabiles Verfahren verändert die Reihenfolge bei Gleichheit nicht.
+        Damit bleibt die ursprüngliche Reihenfolge erhalten.
 
     </forward_sort>
     <forward_encode>
-        Encodieren: Von den sortierten Einträgen werden die jeweils letzten Zeichen "gesammelt". Daraus entsteht dann
-        das transformierte Wort.
+        Encodieren:
+
+        Von den sortierten Einträgen werden die jeweils letzten Zeichen "gesammelt".
+        Daraus entsteht dann das transformierte Wort.
     </forward_encode>
     <forward_index>
-        Index: Der Index ist die Position, die das Original-Wort in der sortierten Tabelle einnimmt. Er wird durch
-         einen vergleich des Original-Wortes mit den einzelnen Einträgen der sortierten Tabelle bestimmt.
+        Index:
+
+        Der Index ist die Position, die das Original-Wort in der sortierten Tabelle einnimmt. Er wird durch
+        einen vergleich des Original-Wortes mit den einzelnen Einträgen der sortierten Tabelle bestimmt.
     </forward_index>
     <forward_end>
-        Ende: Die Transformation ist abgeschlossen. Das Eingabewort ist transformiert und der Index des Eingabeworts
-         ist bestimmt.
+        Ende:
+
+        Die Transformation ist abgeschlossen.
+        Das Eingabewort ist transformiert und der Index des Eingabeworts ist bestimmt.
     </forward_end>
     
     <backward_sort>
-        Sortieren: Die Zeichen werden mit einem stabilen Sortierverfahren neu geordnet.
-         Ein stabiles Verfahren verändert die Reihenfolge bei Gleichheit der Zeichen nicht.
-         Die ursprüngliche Reihenfolge bei gleichen Zeichen bleibt damit erhalten.
+        Sortieren:
+
+        Die Zeichen werden mit einem stabilen Sortierverfahren neu geordnet.
+        Ein stabiles Verfahren verändert die Reihenfolge bei Gleichheit der Zeichen nicht.
+        Die ursprüngliche Reihenfolge bei gleichen Zeichen bleibt damit erhalten.
     </backward_sort>
     <backward_iterate>
-        Iterieren: Der Index gibt die Position des ersten Zeichens an. Der zugehörige Index unter dem Zeichen
-         gibt die Position des jeweils nächsten Zeichens an. Nach und nach werden die Position besucht und
-         das dort liegende Zeichen an das Ergebnis-Wort angehängt.
+        Iterieren:
+
+        Der Index gibt die Position des ersten Zeichens an. Der zugehörige Index unter dem Zeichen
+        gibt die Position des jeweils nächsten Zeichens an. Nach und nach werden die Position besucht und
+        das dort liegende Zeichen an das Ergebnis-Wort angehängt.
     </backward_iterate>
     <backward_end>
-        Ende: Das kodierte Wort ist in seinen Ursprung zurück transformiert.
+        Ende:
+
+        Das kodierte Wort ist in seinen Ursprung zurück transformiert.
     </backward_end>
 </Desctiptions>
