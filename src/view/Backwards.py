@@ -149,19 +149,19 @@ class Backwards(Content):
 
         anim = QPropertyAnimation(label_copy, b"geometry")
         anim.setEndValue(QRect(label_copy.geometry().x(), label_copy.geometry().y(), int(label_copy.geometry().width()*1.3), int(label_copy.geometry().height()*1.3)))
-        speed = int(500 * self._speedFactor.getFactor())
+        speed = int(self.getSpeedFactor()*350)
         anim.setDuration(speed)
         self.anim_group.addAnimation(anim)
 
         anim = QPropertyAnimation(label_copy, b"geometry")
         anim.setEndValue(QRect(label_copy.geometry().x(), label_copy.geometry().y(), label_copy.geometry().width(), label_copy.geometry().height()))
-        speed = int(500 * self._speedFactor.getFactor())
+        speed = int(self.getSpeedFactor()*350)
         anim.setDuration(speed)
         self.anim_group.addAnimation(anim)
 
         anim = QPropertyAnimation(label_copy, b"pos")
         anim.setEndValue(QPoint(x_end, y_start))
-        speed = int(500 * self._speedFactor.getFactor())
+        speed = int(self.getSpeedFactor()*350)
         anim.setDuration(speed)
         self.anim_group.addAnimation(anim)
 
@@ -169,7 +169,7 @@ class Backwards(Content):
 
         anim = QPropertyAnimation(index_label_copy, b"pos")
         anim.setEndValue(QPoint(x_end, y_start))
-        speed = int(500 * self._speedFactor.getFactor())
+        speed = int(self.getSpeedFactor()*350)
         anim.setDuration(speed)
         self.anim_group.addAnimation(anim)
 
@@ -212,21 +212,21 @@ class Backwards(Content):
         anim = QPropertyAnimation(label_selected, b"geometry", self)
         anim.setEndValue(QRect(label_selected.geometry().x(), label_selected.geometry().y(), int(label_selected.geometry().width()*1.3),
                                int(label_selected.geometry().height()*1.3)))
-        speed = int(self._speedFactor.getFactor() * 250)
+        speed = int(self.getSpeedFactor()*250)
         anim.setDuration(speed)
 
         self.anim_group.addAnimation(anim)
 
         anim = QPropertyAnimation(label_selected, b"geometry", self)
         anim.setEndValue(QRect(label_selected.geometry().x(), label_selected.geometry().y(), self._label_width, self._label_height))
-        speed = int(self._speedFactor.getFactor() * 250)
+        speed = int(self.getSpeedFactor()*250)
         anim.setDuration(speed)
 
         self.anim_group.addAnimation(anim)
 
         anim = QPropertyAnimation(label_selected, b"pos", self)
         anim.setEndValue(QPoint(x_start, y_start))
-        speed = int(350*self._speedFactor.getFactor())
+        speed = int(self.getSpeedFactor()*350)
         anim.setDuration(speed)
         anim.start()
 
@@ -235,7 +235,7 @@ class Backwards(Content):
         self.animCounterIncrease()
         self.anim_group.start()
 
-        speed = 500
+        speed = int(500)
         start_color_background = QColor(self._color_setting.get(Setting.label_animation_background.value))
         start_color_text = QColor(self._color_setting.get(Setting.label_animation_text.value))
         end_color_background = QColor(self._color_setting.get(Setting.label_background.value))
@@ -304,7 +304,7 @@ class Backwards(Content):
         anim.setEndValue(QRect(first_encode_elem_x, y_end,
                                int(decode.sizeHint().width()*2), int(decode.sizeHint().height()*2)))
 
-        speed = int(self._speedFactor.getFactor()*500)
+        speed = int(self.getSpeedFactor()*500)
         anim.setDuration(speed)
         self.anim_group.addAnimation(anim)
         self.anim_group.finished.connect(self.animCounterDecrease)
