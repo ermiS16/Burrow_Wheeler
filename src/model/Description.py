@@ -1,3 +1,4 @@
+import os
 import xml.etree.ElementTree as ET
 from enum import Enum
 from PyQt5.QtWidgets import QLabel
@@ -21,7 +22,9 @@ class Description(QLabel):
         self._loadDescriptions()
 
     def _loadDescriptions(self):
-        tree = ET.parse("/home/eric/Dokumente/Repositories/hska/Burrow_Wheeler/src/res/Descriptions.xml")
+
+        filename = os.path.join(os.getcwd(), "src/res/Descriptions.xml")
+        tree = ET.parse(filename)
         xml_root = tree.getroot()
         for child in xml_root:
             desc = child.text

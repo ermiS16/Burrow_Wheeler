@@ -12,7 +12,6 @@ class Table:
             table[-1].deleteLater()
             del table[-1]
 
-
     def resetTable(self, table):
         if(len(table) > 0):
             for i in range(len(table)):

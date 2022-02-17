@@ -65,17 +65,19 @@ class Backwards(Content):
         x_start = self._left_box_x_start
         y_start = self._left_box_y_start
 
-        encode_label = QLabel(self)
-        encode_label.setText("Encodiertes Wort:")
-        encode_label.move(x_start, y_start)
-        encode_label_width = encode_label.geometry().width()
-        self.setInfoLabel('encode', encode_label)
+        encode_label_info = QLabel(self)
+        encode_label_info.setText("Kodiertes Wort:")
+        encode_label_info.setStyleSheet(sty.getStyle(Style.infoLabelStyle))
+        encode_label_info.move(x_start, y_start)
+        encode_label_width = encode_label_info.geometry().width()
+        self.setInfoLabel('encode', encode_label_info)
 
-        index_label_desc = QLabel(self)
-        index_label_desc.setText("Index:")
+        index_label_info = QLabel(self)
+        index_label_info.setText("Index:")
+        index_label_info.setStyleSheet(sty.getStyle(Style.infoLabelStyle))
         y_start = y_start + self._label_line_margin
-        index_label_desc.move(x_start, y_start)
-        self.setInfoLabel('index', index_label_desc)
+        index_label_info.move(x_start, y_start)
+        self.setInfoLabel('index', index_label_info)
 
         elem_count = 0
         for ch in self._encode:
@@ -289,7 +291,7 @@ class Backwards(Content):
         first_encode_elem_height = encode_label.geometry().height()
 
         decode = QLabel(self)
-        decode.setText("Decodiert: " + decoded)
+        decode.setText("Dekodiert: " + decoded)
         decode.setGeometry(QRect(first_encode_elem_x, first_encode_elem_y, 0, 0))
         decode.setStyleSheet(sty.getStyle(Style.resultLabelStyle))
         decode.setTextInteractionFlags(Qt.TextSelectableByMouse)

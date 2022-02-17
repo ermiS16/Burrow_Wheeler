@@ -13,9 +13,9 @@ def transform_step(text):
 
 #input_text = r"""Die Burrows-Wheeler-Transformation (kurz: BWT) wird in Datenkompressionsverfahren eingesetzt ohne selber eine Kompression durchzuführen. Im Gegenteil, sie fügt dem Kompressionsverfahren einen Wert hinzu, während die Länge der Eingabe auch gleich die Länge der Ausgabe entspricht. Sie wurde 1994 von Michael Burrows und David Wheeler in einem Technischen Report für digital -- System Research Center vorgestellt. Durch die Eigenschaften der Transformation ist eine effiziente Speicherung der Daten durch anschließende Verfahren möglich. Ein Kompressionsverfahren, dass die BWT verwendet ist bzip2. Dort wird das Ergebnis der Transformation mit dem Move-to-front-Verfahren transformiert und anschließend mit der Huffman-Kodierung komprimiert. Die Theoretischen Grundlagen der Transformationen erläutern die funktionsweise und zeigen auf, weshalb ihr Ergebnis für andere Verfahren relevant ist. Seitens des Autors wurde eine Desktop-Anwendung entwickelt, mit der es möglich ist die Transformation Schritt für Schritt durchzuführen. Die Funktionsweise der Anwendung wird in der Bedienungsanleitung beschrieben. Für weitere Entwicklungen liegt der Dokumentation die Implementierung der Anwendung bei. In dieser werden der Ablauf, Architektur und Schnittstellen beschrieben. Mögliche Ideen zur Weiterentwicklungen werden am Ende der Dokumentation betrachtet."""
 #input_text = "Hs-Karlsruhe"
-#input_text = "Mississippi"
+input_text = "Mississippi"
 #input_text = "initialisieren"
-input_text = "programmieren"
+#input_text = "programmieren"
 
 text_length = len(input_text)
 #print("Text Length: " + str(text_length) + "\n")

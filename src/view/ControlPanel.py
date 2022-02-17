@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QLabel, QPushButton, QSlider, QLineEdit, QWidget, QComboBox, QColorDialog, QMessageBox
+from PyQt5.QtWidgets import QLabel, QPushButton, QSlider, QLineEdit, QWidget, QComboBox, QColorDialog, QMessageBox, \
+    QSpinBox
 from PyQt5.QtCore import QRect, QRegExp, Qt
 from PyQt5.QtGui import QRegExpValidator
 from enum import Enum
@@ -14,6 +15,8 @@ class ElemKeys(Enum):
     prev_button = 'prev_button'
     transform_button = 'transform_button'
     speed_slider = 'speed_slider'
+    speed_slider_label = 'speed_slider_label'
+    speed_info = 'speed_info'
     reset_button = 'reset_button'
     direction_combo = 'direction_box'
     label_color_button = 'label_color_button'
@@ -57,6 +60,8 @@ class ControlPanel(QWidget):
         self._prev_button = None
         self._reset_button = None
         self._speed_slider = None
+        self._speed_slider_label = None
+        self._speed_info = None
         self._directionCombo = None
         self._labelColorButton = None
         self._chooseColor = None
@@ -134,20 +139,20 @@ class ControlPanel(QWidget):
 
     def toggleControlPanelBtn(self):
         for btn in self._controlBtnList:
-            self._toggleElem(btn)
+            self.toggleElem(btn)
 
     def toggleDeltaInput(self):
         #print(self._directionCombo.currentText(), Direction.backwards.value)
         if self._directionCombo.currentText() == Direction.backwards.value:
             #print("Delta ON")
             self._delta_field.setEnabled(True)
-            self._delta_field.setText("2")
-            self._input_field.setText("a!iepdWkii")
+            # self._delta_field.setText("2")
+            # self._input_field.setText("a!iepdWkii")
         else:
             #print("Delta OFF")
             self._delta_field.setEnabled(False)
 
-    def _toggleElem(self, elem):
+    def toggleElem(self, elem):
         if elem.isEnabled():
             elem.setEnabled(False)
         else:
@@ -174,12 +179,12 @@ class ControlPanel(QWidget):
     def getDirection(self):
         return self._directionCombo.currentText()
 
-    def _removeControlElement(self, elem):
+    def removeControlElement(self, elem):
         if elem != None:
             elem.deleteLater()
             del elem
 
-    def _clearControlBtnList(self):
+    def clearControlBtnList(self):
         for btn in self._controlBtnList:
             del btn
 
@@ -193,25 +198,40 @@ class ControlPanel(QWidget):
         warning.setStandardButtons(QMessageBox.Ok)
         warning.buttonClicked(warning.close)
 
+    def getSpeedFactor(self):
+        print(self._speed_slider.value())
+        value = (self._speed_slider.value() / 5)
+        print(value)
+        factor = (value ** -1)
+        #factor = 1
+        return factor
+
+    def updateSpeedInfo(self):
+        value = (self._speed_slider.value() / 5)
+        self._speed_info.setText(str(value) + "x")
+        self._speed_info.resize(self._speed_info.sizeHint().width(), self._speed_info.geometry().height())
+
 
     def initControl(self):
 
         #print("Control Panel", self._width, self._height)
 
-        self._removeControlElement(self._input_field_label)
-        self._removeControlElement(self._input_field)
-        self._removeControlElement(self._delta_field_label)
-        self._removeControlElement(self._delta_field)
-        self._removeControlElement(self._transform_button)
-        self._removeControlElement(self._next_button)
-        self._removeControlElement(self._prev_button)
-        self._removeControlElement(self._speed_slider)
-        self._removeControlElement(self._directionCombo)
-        self._removeControlElement(self._labelColorButton)
-        self._removeControlElement(self._colorApplyButton)
-        self._removeControlElement(self._chooseColor)
-        self._removeControlElement(self._editColorButton)
-        self._clearControlBtnList()
+        self.removeControlElement(self._input_field_label)
+        self.removeControlElement(self._input_field)
+        self.removeControlElement(self._delta_field_label)
+        self.removeControlElement(self._delta_field)
+        self.removeControlElement(self._transform_button)
+        self.removeControlElement(self._next_button)
+        self.removeControlElement(self._prev_button)
+        self.removeControlElement(self._speed_slider)
+        self.removeControlElement(self._speed_slider_label)
+        self.removeControlElement(self._speed_info)
+        self.removeControlElement(self._directionCombo)
+        self.removeControlElement(self._labelColorButton)
+        self.removeControlElement(self._colorApplyButton)
+        self.removeControlElement(self._chooseColor)
+        self.removeControlElement(self._editColorButton)
+        self.clearControlBtnList()
 
         self._control_panel_width = self._width
         self._control_panel_height = self._width * 0.1    # (10% von Parent)
@@ -259,26 +279,52 @@ class ControlPanel(QWidget):
 
         self._next_button = QPushButton(self)
         self._next_button.setObjectName(ElemKeys.next_button.value)
-        self._next_button.setText("Next")
+        self._next_button.setText("Weiter")
         self._next_button.setEnabled(False)
         next_btn_width = self._next_button.geometry().width()
 
         self._prev_button = QPushButton(self)
         self._prev_button.setObjectName(ElemKeys.prev_button.value)
-        self._prev_button.setText("Prev")
+        self._prev_button.setText("Zurück")
         self._prev_button.setEnabled(False)
         prev_btn_width = self._prev_button.geometry().width()
+
+        self._speed_slider_label = QLabel(self)
+        self._speed_slider_label.setText("Geschwindigkeit: ")
+        self._speed_slider_label.setObjectName(ElemKeys.speed_slider_label.value)
+        speed_slider_label_width = self._speed_slider_label.geometry().width()
+
+        self._speed_info = QLabel(self)
+        self._speed_info.setText("1x")
+        self._speed_info.setAlignment(Qt.AlignCenter)
+        self._speed_info.setObjectName(ElemKeys.speed_info.value)
+        speed_info_width = self._speed_info.geometry().width()
+
+        # self._speed_slider = QSpinBox(self)
+        # self._speed_slider.setObjectName(ElemKeys.speed_slider.value)
+        # self._speed_slider.setSuffix("x")
+        # self._speed_slider.setRange(0, 2)
+        # self._speed_slider.setStepType(QSpinBox.AdaptiveDecimalStepType)
+        # self._speed_slider.setValue(1)
+        # self._speed_slider.resize(self._speed_slider.sizeHint().width(), self._speed_slider.geometry().height())
 
         self._speed_slider = QSlider(Qt.Horizontal, self)
         self._speed_slider.setObjectName(ElemKeys.speed_slider.value)
         self._speed_slider.setGeometry(QRect(self._speed_slider.geometry().x(), self._speed_slider.geometry().y(),
                                        int(self._speed_slider.geometry().width()*1.5), int(self._speed_slider.geometry().height()*1.3)))
+
+        # self._speed_slider.setMinimum(1)
+        # self._speed_slider.setMaximum(14)
+        # self._speed_slider.setSingleStep(1)
+        # self._speed_slider.setValue(7)
+        # self._speed_slider.setTickInterval(1)
         self._speed_slider.setMinimum(1)
-        self._speed_slider.setMaximum(14)
+        self._speed_slider.setMaximum(10)
+        self._speed_slider.setValue(5)
         self._speed_slider.setSingleStep(1)
-        self._speed_slider.setValue(7)
         self._speed_slider.setTickInterval(1)
         self._speed_slider.setTickPosition(QSlider.TicksBelow)
+        self._speed_slider.valueChanged.connect(self.updateSpeedInfo)
         speed_slider_width = self._speed_slider.geometry().width()
 
         self._directionCombo = QComboBox(self)
@@ -292,7 +338,7 @@ class ControlPanel(QWidget):
         self._chooseColor.addItems(self._colorTypes)
 
         self._editColorButton = QPushButton(self)
-        self._editColorButton.setText("Edit Color")
+        self._editColorButton.setText("Farbe editieren")
         self._editColorButton.setEnabled(False)
 
 
@@ -324,8 +370,12 @@ class ControlPanel(QWidget):
         self._prev_button.move(x_start, y_start)
 
         x_start = x_start + prev_btn_width + elem_margin_x
-        #print("Speed Slider", x_start, prev_btn_width, elem_margin_x)
-        self._speed_slider.move(x_start, y_start)
+        #print("Speed Slider Label", x_start, prev_btn_width, elem_margin_x)
+        self._speed_slider_label.move(x_start, y_start)
+
+        x_start = x_start + speed_slider_label_width + elem_margin_x
+        #print("Speed Info", x_start, prev_btn_width, elem_margin_x)
+        self._speed_info.move(x_start, y_start)
 
         x_start = control_panel_center_x - elem_all_width_half
         y_start = y_start + elem_margin_y
@@ -349,6 +399,11 @@ class ControlPanel(QWidget):
         self._directionCombo.model().item(0).setEnabled(False)
         self._directionCombo.currentTextChanged.connect(self.toggleDeltaInput)
 
+        x_start = self._speed_slider_label.geometry().x()
+        #print("Speed Slider", x_start, prev_btn_width, elem_margin_x)
+        self._speed_slider.move(x_start, y_start)
+
+
         self.setElem(ElemKeys.input_field.value, self._input_field)
         self.setElem(ElemKeys.input_field_label.value, self._input_field_label)
         self.setElem(ElemKeys.delta_field.value, self._delta_field)
@@ -358,6 +413,8 @@ class ControlPanel(QWidget):
         self.setElem(ElemKeys.prev_button.value, self._prev_button)
         self.setElem(ElemKeys.direction_combo.value, self._directionCombo)
         self.setElem(ElemKeys.speed_slider.value, self._speed_slider)
+        self.setElem(ElemKeys.speed_slider_label.value, self._speed_slider_label)
+        self.setElem(ElemKeys.speed_info.value, self._speed_info)
         self.setElem(ElemKeys.label_color_button.value, self._labelColorButton)
         self.setElem(ElemKeys.choose_color_combo.value, self._chooseColor)
         self.setElem(ElemKeys.edit_color_button.value, self._editColorButton)

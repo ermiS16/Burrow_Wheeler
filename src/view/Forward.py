@@ -72,6 +72,34 @@ class Forward(Content):
         text = ""
         self.initDescription(DESC.forward_rotation)
 
+        info_label = QLabel(self)
+        info_label.setText("Rotationen")
+        info_label.setStyleSheet(sty.getStyle(Style.infoLabelStyle))
+        x_start = self._left_box_x_start
+        y_start = self._left_box_y_start - self._elem_margin_y
+        print(x_start, y_start)
+        info_label.move(x_start, y_start)
+        self.setInfoLabel('rotation', info_label)
+
+        info_label = QLabel(self)
+        info_label.setText("Sortierte Rotationen")
+        info_label.setStyleSheet(sty.getStyle(Style.infoLabelStyle))
+        x_start = self._middle_box_x_start
+        y_start = self._middle_box_y_start - self._elem_margin_y
+        print(x_start, y_start)
+        info_label.move(x_start, y_start)
+        self.setInfoLabel('sorted_rotation', info_label)
+
+        info_label = QLabel(self)
+        info_label.setText("Kodiertes Wort")
+        info_label.setStyleSheet(sty.getStyle(Style.infoLabelStyle))
+        x_start = self._right_box_x_start
+        #y_start = self._middle_box_y_start - self._elem_margin_y
+        y_start = round(self._right_box_height / 2) - self._elem_margin_y
+        print(x_start, y_start)
+        info_label.move(x_start, y_start)
+        self.setInfoLabel('encoded_input', info_label)
+
         elem_count = 0
         for ch in self._input_text:
             label = QLabel(self)
@@ -101,7 +129,7 @@ class Forward(Content):
         first_encode_elem_height = encode_label.geometry().height()
 
         encode = QLabel(self)
-        encode.setText("Encode: " + encode_text)
+        encode.setText("Kodiert: " + encode_text)
         encode.setGeometry(QRect(first_encode_elem_x, first_encode_elem_y, 0, 0))
         encode.setStyleSheet(sty.getStyle(Style.resultLabelStyle))
         encode.setTextInteractionFlags(Qt.TextSelectableByMouse)
@@ -285,32 +313,42 @@ class Forward(Content):
 
 
     def selectSortedRow(self, row_index, step):
+        # if not self.infoLabelExists('sorted_rotation'):
+        #     info_label = QLabel(self)
+        #     info_label.setText("Sortierte Rotationen")
+        #     info_label.setStyleSheet(sty.getStyle(Style.infoLabelStyle))
+        #     x_start = self._middle_box_x_start
+        #     y_start = self._middle_box_y_start - self._elem_margin_y
+        #     print(x_start, y_start)
+        #     info_label.move(x_start, y_start)
+        #     self.setInfoLabel('sorted_rotation', info_label)
 
         table = self.getTableEntry(TableName.table.value, row_index)
         copy_table = []
         self.anim_group = QSequentialAnimationGroup(self)
 
         for label in table:
-            labelCopy = QLabel(self)
-            labelCopy.setAlignment(Qt.AlignCenter)
-            labelCopy.setText(str(label.text()))
-            labelCopy.setStyleSheet(self._color_setting.get(Setting.label_animation_style.value))
-            labelCopy.resize(self._label_width, self._label_height)
-            labelCopy.move(label.geometry().x(), label.geometry().y())
-            labelCopy.show()
-            copy_table.append(labelCopy)
+            label_copy = QLabel(self)
+            label_copy.setAlignment(Qt.AlignCenter)
+            label_copy.setText(str(label.text()))
+            label_copy.setStyleSheet(self._color_setting.get(Setting.label_animation_style.value))
+            label_copy.resize(self._label_width, self._label_height)
+            label_copy.move(label.geometry().x(), label.geometry().y())
+            label_copy.show()
+            copy_table.append(label_copy)
 
         y_table = self.getTableEntry(TableName.table.value, step)
         y_start = y_table[0].geometry().y()
-        first = 1
+        first = True
         for label in copy_table:
             if first:
                 x_start = self._middle_box_x_start
-                first = 0
+                x_end = x_start
+                first = False
             else:
                 x_start = x_start + self._label_width + self._elem_margin_x
+                x_end = x_start #+ self._elem_margin_x
 
-            x_end = x_start + self._elem_margin_x
             anim = QPropertyAnimation(label, b"pos")
             anim.setEndValue(QPoint(x_end, y_start))
             speed = int(200*self._speedFactor.getFactor())

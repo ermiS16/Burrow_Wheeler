@@ -146,7 +146,11 @@ class Content(QWidget):
             del dir[key]
 
     def setInfoLabel(self, key, val):
+        print("Set Info: " + str(key))
         self._info_label[key] = val
+
+    def infoLabelExists(self, label_name):
+        return label_name in self._info_label
 
     def setResultLabel(self, key, val):
         self._resultLabel[key] = val

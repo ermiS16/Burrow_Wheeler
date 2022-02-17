@@ -79,8 +79,11 @@ class Gui(QMainWindow):
         return False
 
     def updateSpeed(self, content):
-        factor = ((self.speed_slider.value() / 5) ** -1)
+        factor = self.controlPanel.getSpeedFactor()
+        self.controlPanel.updateSpeedInfo()
+        #print(str(factor))
         content.updateSpeed(factor)
+
 
     #################### INIT GUI ####################
 
@@ -138,7 +141,7 @@ class Gui(QMainWindow):
         self.setWindowTitle("Burrows-Wheeler Transformation")
 
     def createMenu(self):
-        exit_act = QAction('Exit', self)
+        exit_act = QAction('Beenden', self)
         exit_act.setShortcut('Ctrl+Q')
         exit_act.triggered.connect(self.close)
 
@@ -147,6 +150,7 @@ class Gui(QMainWindow):
 
         file_menu = menu_bar.addMenu('File')
         file_menu.addAction(exit_act)
+
 
 
     #################### INIT TRANSFORMATION ####################

@@ -23,7 +23,7 @@
     </forward_end>
     
     <backward_sort>
-        Sortien: Die Zeichen werden mit einem stabilen Sortierverfahren neu geordnet.
+        Sortieren: Die Zeichen werden mit einem stabilen Sortierverfahren neu geordnet.
          Ein stabiles Verfahren verändert die Reihenfolge bei Gleichheit der Zeichen nicht.
          Die ursprüngliche Reihenfolge bei gleichen Zeichen bleibt damit erhalten.
     </backward_sort>
