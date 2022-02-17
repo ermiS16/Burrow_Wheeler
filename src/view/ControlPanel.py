@@ -251,7 +251,7 @@ class ControlPanel(QWidget):
 
         self._input_field = QLineEdit(self)
         self._input_field.setObjectName(ElemKeys.input_field.value)
-        input_text_regex = QRegExp(".{2,15}")
+        input_text_regex = QRegExp(".{3,15}")
         input_text_validator = QRegExpValidator(input_text_regex)
         self._input_field.setValidator(input_text_validator)
         self._input_field.setPlaceholderText("Input")
