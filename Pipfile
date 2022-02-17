@@ -6,8 +6,9 @@ name = "pypi"
 [packages]
 PyQt5 = "*"
 pyinstaller = "*"
-pipenv = "*"
-pyqt5-stubs = "*"
+
+[packages.burrows-wheeler-transformation]
+path = "./src"
 
 [dev-packages]
 
@@ -15,7 +16,4 @@ pyqt5-stubs = "*"
 python_version = "3.9"
 
 [packages.application]
-path = "./src"
-
-[packages.b7287bc]
 path = "./src"

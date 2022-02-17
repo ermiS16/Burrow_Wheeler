@@ -432,6 +432,8 @@ class Forward(Content):
             end_color_text = QColor(self._color_setting.get(Setting.label_text.value))
             self.animateBackgroundColor(label, start_color_background, end_color_background, start_color_text, end_color_text, duration=speed)
 
-        table_rotated = self._utils_table.rotateTable(copy_table)
+
+        table_rotated = self.rotateTable(copy_table)
+        #table_rotated = self._utils_table.rotateTable(copy_table)
         self.appendTable(TableName.table.value, table_rotated)
 

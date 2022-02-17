@@ -1,7 +1,5 @@
-import traceback
-
-from PyQt5 import QtCore, Qt
-from PyQt5.QtCore import QRect, Qt, pyqtSignal, QThreadPool, QRunnable, QObject, QSize
+from PyQt5 import Qt
+from PyQt5.QtCore import QRect, Qt, pyqtSignal, QObject, QSize
 from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QColorDialog
 from enum import Enum
 import styles.Style as sty

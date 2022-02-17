@@ -1,8 +1,7 @@
 import functools
 
-from PyQt5.QtCore import QVariantAnimation, QRect, Qt
+from PyQt5.QtCore import QVariantAnimation, QRect
 from PyQt5.QtWidgets import QWidget
-from controller import Utils
 from controller.Speed import Speed
 from model.Description import Description
 from view.ColorSettings import Setting
@@ -14,9 +13,6 @@ class Content(QWidget):
     def __init__(self, arg1):
         super(Content, self).__init__()
         self._resultLabel = {}
-        self._utils_table = Utils.Table()
-        self._utils_btn = Utils.Button()
-        self._utils_label = Utils.Label()
         self._x = 0
         self._y = 0
         self._width = 0
@@ -82,6 +78,14 @@ class Content(QWidget):
         list = self._table_dict.get(table_name)
         return list[0]
 
+    def rotateTable(self, table):
+        last = table[-1]
+        for i in range(len(table) - 1, 0, -1):
+            table[i] = table[i - 1]
+
+        table[0] = last
+        return table
+
     def getTableEntry(self, table_name, index):
         list = self._table_dict.get(table_name)
         return list[0][index]
@@ -122,6 +126,14 @@ class Content(QWidget):
             label.deleteLater()
             del label
 
+    def resetTable(self, table):
+        if(len(table) > 0):
+            for i in range(len(table)):
+                self.deleteLabelList(table[i])
+
+            for list in table:
+                del list
+
     def reset(self):
         self.deleteDict(self._info_label)
         self.deleteDict(self._resultLabel)
@@ -129,9 +141,11 @@ class Content(QWidget):
         for entry in self._table_dict:
             list = self._table_dict[entry]
             if list[1] == "label":
-                self._utils_table.deleteLabelList(list[0])
+                self.deleteLabelList(list[0])
+                #self._utils_table.deleteLabelList(list[0])
             if list[1] == "table":
-                self._utils_table.resetTable(list[0])
+                self.resetTable(list[0])
+                #self._utils_table.resetTable(list[0])
             list[1] = []
 
     def deleteDict(self, dict):
@@ -157,10 +171,6 @@ class Content(QWidget):
 
     def deleteResultLabel(self):
         self.deleteDict(self._resultLabel)
-        # entries = list(self._resultLabel.keys())
-        # for entry in entries:
-        #     self.deleteDirectoryEntry(self._resultLabel, str(entry))
-            #self._utils_table.deleteDirectoryEntry(self._resultLabel, str(entry))
 
     def deleteInfoLabel(self):
         self.deleteDict(self._info_label)

@@ -16,7 +16,6 @@ from view.Warning import Warning as warn
 
 from PyQt5.QtWidgets import QWidget, QMainWindow, QAction
 from PyQt5.QtCore import QObject, QThreadPool, QRunnable, pyqtSignal, QRect, QSize, Qt
-
 from view.ColorSettings import ColorType
 
 

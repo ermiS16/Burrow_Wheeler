@@ -1,10 +1,8 @@
-from PyQt5.QtWidgets import QLabel, QPushButton, QSlider, QLineEdit, QWidget, QComboBox, QColorDialog, QMessageBox, \
-    QSpinBox
+from PyQt5.QtWidgets import QLabel, QPushButton, QSlider, QLineEdit, QWidget, QComboBox, QColorDialog, QMessageBox
 from PyQt5.QtCore import QRect, QRegExp, Qt
 from PyQt5.QtGui import QRegExpValidator
 from enum import Enum
 from view.ColorSettings import ColorType
-from controller.Errno import Warnings
 
 class ElemKeys(Enum):
     input_field = 'input_field'

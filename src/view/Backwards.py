@@ -42,13 +42,13 @@ class Backwards(Content):
         self.deleteLastLabel(TableName.tableIndexSortReal.value)
 
     def updateSelectFoundColor(self, index):
-        entry = self.getTableEntry(TableName.tableIndexSortReal, index)
+        entry = self.getTableEntry(TableName.tableIndexSortReal.value, index)
         style = self._color_setting.get(Setting.label_select_found_style.value)
         self.setStyle(entry, style)
 
     def updateSelectColor(self, index):
         print("Index: " + str(index))
-        entry = self.getTableEntry(TableName.tableIndexSortReal, index)
+        entry = self.getTableEntry(TableName.tableIndexSortReal.value, index)
         style = self._color_setting.get(Setting.label_select_style.value)
         self.setStyle(entry, style)
 
