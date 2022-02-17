@@ -229,9 +229,10 @@ class Content(QWidget):
         desc_height = (self._right_box_height * 0.25)
 
         self._description = Description(self)
-        self._description.setAlignment(Qt.AlignTop)
-        self._description.setWordWrap(True)
+        #self._description.setAlignment(Qt.AlignTop)
+        #self._description.setWordWrap(True)
         self._description.setDescription(desc)
+        #self._description.resize(self._description.geometry().width(), self._description)
         self._description.setGeometry(QRect(desc_start_x, desc_start_y, desc_width, desc_height))
         self._description.setStyleSheet(sty.getStyle(Style.descriptionStyle))
 
