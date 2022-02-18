@@ -1,8 +1,8 @@
 import time
 import traceback
 
-from model.iText import Text, TextTable
-from model import iText
+from model.Text import Text, TextTable
+from model import Text
 from model.Description import DESC
 from controller.State import STATE, State
 from view.ControlPanel import ControlPanel, ElemKeys, Direction
@@ -366,7 +366,7 @@ class Gui(QMainWindow):
                 self._control_panel.toggleControlPanelBtn()
                 self.createAnimCountListener(self._content)
                 self._content.rotate()
-                self._textTable.addText(iText.rotateText(self._textTable.getLastText()))
+                self._textTable.addText(Text.rotateText(self._textTable.getLastText()))
 
         if(self._state.getState() == STATE.F_SORT):
             self._state.printState()
