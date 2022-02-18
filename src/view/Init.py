@@ -7,4 +7,4 @@ class Init(Content):
         super(Init, self).__init__(self)
 
     def initContent(self):
-        self.initDescription(DESC.init)
+        self.initDescription()

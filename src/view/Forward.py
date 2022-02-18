@@ -70,7 +70,8 @@ class Forward(Content):
         self.reset()
         row = []
         text = ""
-        self.initDescription(DESC.forward_rotation)
+        #self.initDescription(DESC.forward_rotation)
+        self.initDescription()
 
         info_label = QLabel(self)
         info_label.setText("Rotationen")

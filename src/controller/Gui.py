@@ -3,7 +3,7 @@ import traceback
 
 from model.Text import Text, TextTable
 from model import Text
-from model.Description import DESC
+from model.Description import DESC, DescriptionSetting as desc_setting
 from controller.State import STATE, State
 from view.ControlPanel import ControlPanel, ElemKeys, Direction
 from controller.Step import Step
@@ -42,7 +42,6 @@ class AnimAllListener(QRunnable):
         except:
             traceback.print_exc()
         finally:
-            #print("Finished")
             self._signals.finished.emit()
 
 
@@ -52,10 +51,10 @@ class Gui(QMainWindow):
         super().__init__()
         self.mainFrameWidget = QWidget(self)
         self._content = None
+        self._warning = None
 
         self._step = Step(0, 0)
         self._step.printStep()
-        self.speedFactor = 1
         self._state = State(STATE.INIT)
         self._threadpool = QThreadPool()
         self._animation_finished = 0
@@ -81,9 +80,7 @@ class Gui(QMainWindow):
     def updateSpeed(self, content):
         factor = self._control_panel.getSpeedFactor()
         self._control_panel.updateSpeedInfo()
-        #print(str(factor))
         content.updateSpeed(factor)
-
 
     #################### INIT GUI ####################
 
@@ -92,7 +89,7 @@ class Gui(QMainWindow):
         self.initWindow()
         self._control_panel = ControlPanel(self)
         self._control_panel.setObjectName('ControlPanel')
-        self._control_panel.setGeo(QRect(0, self.menu_bar_height, self.win.getWindowWidth(),
+        self._control_panel.setGeo(QRect(0, self._menu_bar_height, self.win.getWindowWidth(),
                                          int(self.win.getWindowHeight()*0.1)))
         self._control_panel.setParent(self.mainFrameWidget)
 
@@ -121,11 +118,14 @@ class Gui(QMainWindow):
 
         self._warning = warn(self)
 
+        self._description_setting = desc_setting()
+        self._description_setting.loadDescriptions()
+
         self.clearContent()
         self._content = init_view(self)
         self._content.setGeo(
             QRect(0, self._control_panel.getHeight(), self.win.getWindowWidth(), self.win.getWindowHeight()))
-        #self._content.setDescription(DESC.init)
+        self._content.setDescription(self._description_setting.getDescription(DESC.init))
         self._content.setParent(self.mainFrameWidget)
         self._content.show()
 
@@ -135,17 +135,17 @@ class Gui(QMainWindow):
 
     def initWindow(self):
         self.win = Window(self.screen())
-        self.window_width = self.win.getWindowWidth()
-        self.window_height = self.win.getWindowHeight()
-        self.screen_width = self.win.getScreenWidth()
-        self.screen_height = self.win.getScreenHeight()
-        self.menu_bar_height = self.menuBar().geometry().height()
+        self._window_width = self.win.getWindowWidth()
+        self._window_height = self.win.getWindowHeight()
+        self._screen_width = self.win.getScreenWidth()
+        self._screen_height = self.win.getScreenHeight()
+        self._menu_bar_height = self.menuBar().geometry().height()
 
-        self.main_window_x_start = round(self.screen_width/2) - round(self.window_width/2)
-        self.main_window_y_start = round(self.screen_height/2) - round(self.window_height/2)
+        self._main_window_x_start = round(self._screen_width / 2) - round(self._window_width / 2)
+        self._main_window_y_start = round(self._screen_height / 2) - round(self._window_height / 2)
 
-        self.setGeometry(self.main_window_x_start, self.main_window_y_start, self.window_width, self.window_height)
-        self.setFixedSize(self.window_width, self.window_height)
+        self.setGeometry(self._main_window_x_start, self._main_window_y_start, self._window_width, self._window_height)
+        self.setFixedSize(self._window_width, self._window_height)
         self.setWindowTitle("Burrows-Wheeler Transformation")
 
     def createMenu(self):
@@ -201,9 +201,6 @@ class Gui(QMainWindow):
                 self._step.reset()
                 self._step.setMax(len(self._f_input_text))
                 self.clearContent()
-                # if self._content is not None and not self.isDeleted(self._content):
-                #     for child in self._content.children():
-                #         child.deleteLater()
 
                 self._content = f_view(self, self._f_input_text)
                 self._content.setObjectName("Content")
@@ -211,6 +208,7 @@ class Gui(QMainWindow):
                 self.updateSpeed(self._content)
                 self._content.setColorSetting(self._color_setting.getColorSettings())
                 self._content.setGeo(QRect(0, self._control_panel.getHeight(), self.win.getWindowWidth(), self.win.getWindowHeight()))
+                self._content.setDescription(self._description_setting.getDescription(DESC.forward_rotation))
                 self._content.setParent(self.mainFrameWidget)
                 self._content.show()
 
@@ -218,10 +216,9 @@ class Gui(QMainWindow):
                 self._control_panel.connectSliderOnChange(ElemKeys.speed_slider, self.updateSpeed, self._content)
                 self._control_panel.connectBtnOnClick(ElemKeys.next_button, self.f_next_step)
                 self._control_panel.connectBtnOnClick(ElemKeys.prev_button, self.f_prev_step)
-                #self.controlPanel.connectBtnOnClick(ElemKeys.color_apply_button, self.updateColor)
                 self._step.printStep()
             else:
-                print("No Valid Input")
+                pass
 
         if direction == Direction.backwards.value:
 
@@ -249,7 +246,7 @@ class Gui(QMainWindow):
                 self._control_panel.setColorTypes(typeList)
 
                 self._b_index_input = str(int(index)-1)
-                self._b_text_input = Text(encode)
+                self._b_text_input = Text.Text(encode)
                 self._b_result = ""
                 self._b_index_select_sorted = 0
                 self._b_decode_refs = []
@@ -258,17 +255,12 @@ class Gui(QMainWindow):
                 self._step.setMax(len(encode))
 
                 self.clearContent()
-                # if self._content is not None and not self.isDeleted(self._content):
-                #     for child in self._content.children():
-                #         child.deleteLater()
 
                 self._content = b_view(self, encode, self._b_index_input)
                 self.updateSpeed(self._content)
                 self._content.setColorSetting(self._color_setting.getColorSettings())
                 self._content.setGeo(QRect(0, self._control_panel.getHeight(), self.win.getWindowWidth(), self.win.getWindowHeight()))
-                # self.content.initLayout()
-                # self.content.initBackwards()
-                self._content.setDescription(DESC.backward_sort)
+                self._content.setDescription(self._description_setting.getDescription(DESC.backward_sort))
                 self._content.setParent(self.mainFrameWidget)
                 self._content.show()
 
@@ -361,7 +353,8 @@ class Gui(QMainWindow):
             if self._step.isMAX():
                 self._state.setState(STATE.F_SORT)
                 self._step.reset()
-                self._content.setDescription(DESC.forward_sort)
+                self._content.setDescription(self._description_setting.getDescription(DESC.forward_sort))
+                #self._content.setDescription(DESC.forward_sort)
             else:
                 self._control_panel.toggleControlPanelBtn()
                 self.createAnimCountListener(self._content)
@@ -373,7 +366,8 @@ class Gui(QMainWindow):
             if self._step.isMAX():
                 self._state.setState(STATE.F_ENCODE)
                 self._step.reset()
-                self._content.setDescription(DESC.forward_encode)
+                self._content.setDescription(self._description_setting.getDescription(DESC.forward_encode))
+                #self._content.setDescription(DESC.forward_encode)
             else:
                 self._control_panel.toggleControlPanelBtn()
                 self.createAnimCountListener(self._content)
@@ -386,7 +380,8 @@ class Gui(QMainWindow):
             if self._step.isMAX():
                 self._state.setState(STATE.F_INDEX_SHOW)
                 self._step.reset()
-                self._content.setDescription(DESC.forward_index)
+                self._content.setDescription(self._description_setting.getDescription(DESC.forward_index))
+                #self._content.setDescription(DESC.forward_index)
             else:
                 self._control_panel.toggleControlPanelBtn()
                 self.createAnimCountListener(self._content)
@@ -399,7 +394,6 @@ class Gui(QMainWindow):
                 self._control_panel.toggleControlPanelBtn()
                 self.createAnimCountListener(self._content)
                 for i in range(self._step.MAX):
-                    #print(i)
                     self._content.showIndex(i)
                 self._f_show_index = True
             else:
@@ -413,7 +407,8 @@ class Gui(QMainWindow):
                 self.createAnimCountListener(self._content)
                 self._content.selectIndex(self._step.getStep(), "next", found=True)
                 self._state.setState(STATE.F_INDEX_FINAL)
-                self._content.setDescription(DESC.forward_end)
+                self._content.setDescription(self._description_setting.getDescription(DESC.forward_end))
+                #self._content.setDescription(DESC.forward_end)
             else:
                 self._control_panel.toggleControlPanelBtn()
                 self.createAnimCountListener(self._content)
@@ -461,7 +456,8 @@ class Gui(QMainWindow):
                 self._content.deleteLastTableSorted()
                 self._state.setState(STATE.F_ROTATION)
                 self._step.setStep((self._step.MAX - 1))
-                self._content.setDescription(DESC.forward_rotation)
+                self._content.setDescription(self._description_setting.getDescription(DESC.forward_rotation))
+                #self._content.setDescription(DESC.forward_rotation)
 
         elif (self._state.getState() == STATE.F_ENCODE):
             self._step.decrease()
@@ -476,7 +472,8 @@ class Gui(QMainWindow):
                 self._content.deleteLastEncodeLabel()
                 self._state.setState(STATE.F_SORT)
                 self._step.setStep((self._step.MAX - 1))
-                self._content.setDescription(DESC.forward_sort)
+                self._content.setDescription(self._description_setting.getDescription(DESC.forward_sort))
+                #self._content.setDescription(DESC.forward_sort)
 
         elif (self._state.getState() == STATE.F_INDEX_SHOW):
             for i in range(self._step.MAX):
@@ -484,7 +481,8 @@ class Gui(QMainWindow):
                 self._content.deleteIndexTable()
                 self._state.setState(STATE.F_ENCODE)
                 self._step.setStep((self._step.MAX - 1))
-                self._content.setDescription(DESC.forward_encode)
+                self._content.setDescription(self._description_setting.getDescription(DESC.forward_encode))
+                #self._content.setDescription(DESC.forward_encode)
                 self._f_show_index = False
 
         elif (self._state.getState() == STATE.F_INDEX_SELECT):
@@ -507,7 +505,8 @@ class Gui(QMainWindow):
             self._content.selectIndex(self._step.getStep(), "prev", found=False)
             self._state.setState(STATE.F_INDEX_SELECT)
             self._content.deleteResultLabel()
-            self._content.setDescription(DESC.forward_index)
+            self._content.setDescription(self._description_setting.getDescription(DESC.forward_index))
+            #self._content.setDescription(DESC.forward_index)
 
 
     #################### BACKWARDS STEP LOGIC ####################
@@ -528,7 +527,8 @@ class Gui(QMainWindow):
                 if self._step.isMAX():
                     self._state.setState(STATE.B_ITERATE)
                     self._step.reset()
-                    self._content.setDescription(DESC.backward_iterate)
+                    self._content.setDescription(self._description_setting.getDescription(DESC.backward_iterate))
+                    #self._content.setDescription(DESC.backward_iterate)
                 else:
                     index = self._b_text_input.getRef(self._step.getStep())
                     self._control_panel.toggleControlPanelBtn()
@@ -543,7 +543,8 @@ class Gui(QMainWindow):
                 self._step.printStep()
                 if self._step.isMAX():
                     self._state.setState(STATE.B_SHOW_RESULT)
-                    self._content.setDescription(DESC.backward_end)
+                    self._content.setDescription(self._description_setting.getDescription(DESC.backward_end))
+                    #self._content.setDescription(DESC.backward_end)
                 else:
                     if self._step.getStep() == 0:
                         self._b_index_select_sorted = self._b_index_input
@@ -614,7 +615,8 @@ class Gui(QMainWindow):
 
             if self._step.getStep() < 0:
                 self._state.setState(STATE.B_SORT)
-                self._content.setDescription(DESC.backward_sort)
+                self._content.setDescription(self._description_setting.getDescription(DESC.backward_sort))
+                #self._content.setDescription(DESC.backward_sort)
                 self._step.setStep(self._step.MAX-1)
                 self._content.removeLastSortLabel()
 
@@ -626,5 +628,6 @@ class Gui(QMainWindow):
             self._step.printStep()
             self._content.deleteResultLabel()
             self._state.setState(STATE.B_ITERATE)
-            self._content.setDescription(DESC.backward_iterate)
+            self._content.setDescription(self._description_setting.getDescription(DESC.backward_iterate))
+            #self._content.setDescription(DESC.backward_iterate)
 

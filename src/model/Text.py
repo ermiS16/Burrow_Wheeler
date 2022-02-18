@@ -35,6 +35,15 @@ class Text:
         self._text = text
 
     def sortText(self):
+        """
+        Sort the text alphabetical
+
+        The sorted text is safed in it's old variable.
+        The new position of every character in the old
+        text string is mapped to the position in the new
+        text string.
+        """
+
         self._text_sorted = sorted(self._text)
         text_sorted_tmp = self._text_sorted.copy()
         text_tmp = [ch for ch in self._text]
@@ -46,7 +55,9 @@ class Text:
             text_sorted_tmp[index_sorted] = None
             text_tmp[index_rotation] = None
             pos = pos + 1
-        self.printSortRefDict(self._sorted_ref_dict)
+
+        ### Debug ###
+        #self.printSortRefDict(self._sorted_ref_dict)
 
 
     def getSortedText(self):
@@ -62,12 +73,12 @@ class Text:
         for key in dir.keys():
             print("Key: " + str(key) + " | Value: " + str(self._sorted_ref_dict[key]))
 
+
 class TextTable:
     def __init__(self):
         self._table = []
         self._sorted_table = []
         self._sorted_ref_dict = {}
-
 
     def addText(self, text):
         self._table.append(text)
@@ -85,12 +96,22 @@ class TextTable:
         return self._table[-1]
 
     def sortTable(self):
+        """
+        Sort the text lines alphabetical
+
+        The sorted text lines are safed in the old table.
+        The new position of every text line in the old
+        table is mapped to the position in the new table.
+        """
+
         self._sorted_table = sorted(self._table.copy())
         for entry in self._table:
             index_sorted = self._sorted_table.index(entry)
             index_rotation = self._table.index(entry)
             self._sorted_ref_dict[index_sorted] = index_rotation
-        self.printSortRefDict()
+
+        ### Debug ###
+        #self.printSortRefDict()
 
     def getSortedTextAtIndex(self, index):
         return self._sorted_table[index]
@@ -100,7 +121,6 @@ class TextTable:
 
     def getTextList(self):
         return self._table
-
 
     def getRef(self, index):
         return self._sorted_ref_dict[index]

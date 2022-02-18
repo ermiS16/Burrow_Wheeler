@@ -3,7 +3,8 @@ import functools
 from PyQt5.QtCore import QVariantAnimation, QRect
 from PyQt5.QtWidgets import QWidget
 from controller.Speed import Speed
-from model.Description import Description
+#from model.Description import Description
+from view.Description import Description
 from view.ColorSettings import Setting
 import styles.Style as sty
 from styles.Style import STYLE
@@ -137,21 +138,17 @@ class Content(QWidget):
     def reset(self):
         self.deleteDict(self._info_label)
         self.deleteDict(self._resultLabel)
-        #self.deleteResultLabel()
         for entry in self._table_dict:
             list = self._table_dict[entry]
             if list[1] == "label":
                 self.deleteLabelList(list[0])
-                #self._utils_table.deleteLabelList(list[0])
             if list[1] == "table":
                 self.resetTable(list[0])
-                #self._utils_table.resetTable(list[0])
             list[1] = []
 
     def deleteDict(self, dict):
         entries = list(dict.keys())
         for entry in entries:
-            #self._utils_table.deleteDirectoryEntry(self._resultLabel, str(entry))
             self.deleteDirectoryEntry(dict, str(entry))
 
     def deleteDirectoryEntry(self, dir, key):
@@ -174,8 +171,6 @@ class Content(QWidget):
 
     def deleteInfoLabel(self):
         self.deleteDict(self._info_label)
-
-
 
     def initLayout(self):
         self._margin_window_left = round(self._width * 0.025)
@@ -229,7 +224,7 @@ class Content(QWidget):
     def initContent(self):
         pass
 
-    def initDescription(self, desc):
+    def initDescription(self):
         if self._description != None:
             self._description.deleteLater()
 
@@ -239,10 +234,8 @@ class Content(QWidget):
         desc_height = (self._right_box_height * 0.25)
 
         self._description = Description(self)
-        #self._description.setAlignment(Qt.AlignTop)
-        #self._description.setWordWrap(True)
-        self._description.setDescription(desc)
-        #self._description.resize(self._description.geometry().width(), self._description)
+        #self._description.setDescription(desc)
+        self._description.setDescription("")
         self._description.setGeometry(QRect(desc_start_x, desc_start_y, desc_width, desc_height))
         self._description.setStyleSheet(sty.getStyle(STYLE.descriptionStyle))
 

@@ -60,7 +60,8 @@ class Backwards(Content):
 
     def initContent(self):
         self.reset()
-        self.initDescription(DESC.backward_sort)
+        #self.initDescription(DESC.backward_sort)
+        self.initDescription()
 
         x_start = self._left_box_x_start
         y_start = self._left_box_y_start

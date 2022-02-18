@@ -18,29 +18,30 @@ class DESC(Enum):
     backward_end = "backward_end"
 
 
-class Description(QScrollArea):
+#class Description(QScrollArea):
+class DescriptionSetting:
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    # def __init__(self, *args, **kwargs):
+    def __init__(self):
 
-        self.setWidgetResizable(True)
+        # self.setWidgetResizable(True)
 
-        content = QWidget(self)
-        self.setWidget(content)
-
-        lay = QVBoxLayout(content)
-
-        self.label = QLabel(self)
-        self.label.setAlignment(Qt.Alignment(Qt.AlignLeft | Qt.AlignTop))
-
-        self.label.setWordWrap(True)
-
-        lay.addWidget(self.label)
+        # content = QWidget(self)
+        # self.setWidget(content)
+        #
+        # lay = QVBoxLayout(content)
+        #
+        # self.label = QLabel(self)
+        # self.label.setAlignment(Qt.Alignment(Qt.AlignLeft | Qt.AlignTop))
+        #
+        # self.label.setWordWrap(True)
+        #
+        # lay.addWidget(self.label)
 
         self._descriptions = {}
-        self._loadDescriptions()
+        self.loadDescriptions()
 
-    def _loadDescriptions(self):
+    def loadDescriptions(self):
 
         filename = os.path.join(os.getcwd(), "src/res/Descriptions.xml")
         tree = ET.parse(filename)
@@ -50,57 +51,19 @@ class Description(QScrollArea):
             self._descriptions[child.tag] = desc.strip()
 
     def getDescription(self, name):
-        info = self._descriptions.get(name)
-        #info = info.replace("\n", "")
-        #info = info.replace("\t", "")
+        info = self._descriptions.get(name.value)
         info = info.replace("  ", "")
         return info
 
     def getAllDesciptions(self):
         return self._descriptions
 
-    def setDescription(self, desc):
-        self.removeDescription()
-
-        self.label.setText(self.getDescription(desc.value))
-
-        #self.setText(self.getDescription(desc.value))
-
-    def removeDescription(self):
-        self.label.setText("")
-
-
-# class Description(QLabel):
-#
-#     def __init__(self, text):
-#         super().__init__(text)
-#         self._descriptions = {}
-#         self._loadDescriptions()
-#
-#     def _loadDescriptions(self):
-#
-#         filename = os.path.join(os.getcwd(), "src/res/Descriptions.xml")
-#         tree = ET.parse(filename)
-#         xml_root = tree.getroot()
-#         for child in xml_root:
-#             desc = child.text
-#             self._descriptions[child.tag] = desc.strip()
-#
-#     def getDescription(self, name):
-#         info = self._descriptions.get(name)
-#         #info = info.replace("\n", "")
-#         #info = info.replace("\t", "")
-#         info = info.replace("  ", "")
-#         return info
-#
-#     def getAllDesciptions(self):
-#         return self._descriptions
-#
-#     def setDescription(self, desc):
-#         self.removeDescription()
-#         self.setText(self.getDescription(desc.value))
-#
-#     def removeDescription(self):
-#         self.setText("")
+    # def setDescription(self, desc):
+    #     self.removeDescription()
+    #     self.label.setText(self.getDescription(desc.value))
+    #
+    #
+    # def removeDescription(self):
+    #     self.label.setText("")
 
 
