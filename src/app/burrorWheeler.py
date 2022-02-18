@@ -1,4 +1,4 @@
-from controller.Gui_Animate import Gui
+from controller.Gui import Gui
 from PyQt5.QtWidgets import QApplication
 import sys
 
