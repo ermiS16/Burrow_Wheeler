@@ -17,26 +17,9 @@ class DESC(Enum):
     backward_iterate = "backward_iterate"
     backward_end = "backward_end"
 
-
-#class Description(QScrollArea):
 class DescriptionSetting:
 
-    # def __init__(self, *args, **kwargs):
     def __init__(self):
-
-        # self.setWidgetResizable(True)
-
-        # content = QWidget(self)
-        # self.setWidget(content)
-        #
-        # lay = QVBoxLayout(content)
-        #
-        # self.label = QLabel(self)
-        # self.label.setAlignment(Qt.Alignment(Qt.AlignLeft | Qt.AlignTop))
-        #
-        # self.label.setWordWrap(True)
-        #
-        # lay.addWidget(self.label)
 
         self._descriptions = {}
         self.loadDescriptions()
@@ -57,13 +40,3 @@ class DescriptionSetting:
 
     def getAllDesciptions(self):
         return self._descriptions
-
-    # def setDescription(self, desc):
-    #     self.removeDescription()
-    #     self.label.setText(self.getDescription(desc.value))
-    #
-    #
-    # def removeDescription(self):
-    #     self.label.setText("")
-
-
