@@ -7,9 +7,6 @@ name = "pypi"
 PyQt5 = "*"
 pyinstaller = "*"
 
-[packages.burrows-wheeler-transformation]
-path = "./src"
-
 [dev-packages]
 
 [requires]
