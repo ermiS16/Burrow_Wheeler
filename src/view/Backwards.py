@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QColor, QCursor
 
 import styles.Style as sty
-from styles.Style import Style
+from styles.Style import STYLE
 from view.ColorSettings import Setting
 from view.Content import Content
 
@@ -67,18 +67,28 @@ class Backwards(Content):
 
         encode_label_info = QLabel(self)
         encode_label_info.setText("Kodiertes Wort:")
-        encode_label_info.setStyleSheet(sty.getStyle(Style.infoLabelStyle))
+        encode_label_info.setStyleSheet(sty.getStyle(STYLE.infoLabelStyle))
         encode_label_info.move(x_start, y_start)
         encode_label_width = encode_label_info.geometry().width()
-        self.setInfoLabel('encode', encode_label_info)
+        self.setInfoLabel('encode_info', encode_label_info)
 
         index_label_info = QLabel(self)
         index_label_info.setText("Index:")
-        index_label_info.setStyleSheet(sty.getStyle(Style.infoLabelStyle))
+        index_label_info.setStyleSheet(sty.getStyle(STYLE.infoLabelStyle))
         y_start = y_start + self._label_line_margin
         index_label_info.move(x_start, y_start)
-        self.setInfoLabel('index', index_label_info)
+        self.setInfoLabel('index_info', index_label_info)
 
+        info_label = QLabel(self)
+        info_label.setText("Dekodiertes Wort")
+        info_label.setStyleSheet(sty.getStyle(STYLE.infoLabelStyle))
+        x_start = self._right_box_x_start
+        y_start = round(self._right_box_height / 2) - self._elem_margin_y
+        print(x_start, y_start)
+        info_label.move(x_start, y_start)
+        self.setInfoLabel('decoded_info', info_label)
+
+        x_start = self._left_box_x_start
         elem_count = 0
         for ch in self._encode:
             ch_label = QLabel(self)
@@ -293,7 +303,7 @@ class Backwards(Content):
         decode = QLabel(self)
         decode.setText("Dekodiert: " + decoded)
         decode.setGeometry(QRect(first_encode_elem_x, first_encode_elem_y, 0, 0))
-        decode.setStyleSheet(sty.getStyle(Style.resultLabelStyle))
+        decode.setStyleSheet(sty.getStyle(STYLE.resultLabelStyle))
         decode.setTextInteractionFlags(Qt.TextSelectableByMouse)
         decode.setCursor(QCursor(Qt.IBeamCursor))
         decode.show()

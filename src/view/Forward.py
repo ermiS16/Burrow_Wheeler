@@ -3,7 +3,7 @@ from enum import Enum
 from view.Content import Content
 from model.Description import DESC
 import styles.Style as sty
-from styles.Style import Style
+from styles.Style import STYLE
 from view.ColorSettings import Setting
 from view.CustomLabel import CustomLabel
 
@@ -74,31 +74,30 @@ class Forward(Content):
 
         info_label = QLabel(self)
         info_label.setText("Rotationen")
-        info_label.setStyleSheet(sty.getStyle(Style.infoLabelStyle))
+        info_label.setStyleSheet(sty.getStyle(STYLE.infoLabelStyle))
         x_start = self._left_box_x_start
         y_start = self._left_box_y_start - self._elem_margin_y
         print(x_start, y_start)
         info_label.move(x_start, y_start)
-        self.setInfoLabel('rotation', info_label)
+        self.setInfoLabel('rotation_info', info_label)
 
         info_label = QLabel(self)
         info_label.setText("Sortierte Rotationen")
-        info_label.setStyleSheet(sty.getStyle(Style.infoLabelStyle))
+        info_label.setStyleSheet(sty.getStyle(STYLE.infoLabelStyle))
         x_start = self._middle_box_x_start
         y_start = self._middle_box_y_start - self._elem_margin_y
         print(x_start, y_start)
         info_label.move(x_start, y_start)
-        self.setInfoLabel('sorted_rotation', info_label)
+        self.setInfoLabel('sorted_rotation_info', info_label)
 
         info_label = QLabel(self)
         info_label.setText("Kodiertes Wort")
-        info_label.setStyleSheet(sty.getStyle(Style.infoLabelStyle))
+        info_label.setStyleSheet(sty.getStyle(STYLE.infoLabelStyle))
         x_start = self._right_box_x_start
-        #y_start = self._middle_box_y_start - self._elem_margin_y
         y_start = round(self._right_box_height / 2) - self._elem_margin_y
         print(x_start, y_start)
         info_label.move(x_start, y_start)
-        self.setInfoLabel('encoded_input', info_label)
+        self.setInfoLabel('encoded_input_info', info_label)
 
         elem_count = 0
         for ch in self._input_text:
@@ -131,7 +130,7 @@ class Forward(Content):
         encode = QLabel(self)
         encode.setText("Kodiert: " + encode_text)
         encode.setGeometry(QRect(first_encode_elem_x, first_encode_elem_y, 0, 0))
-        encode.setStyleSheet(sty.getStyle(Style.resultLabelStyle))
+        encode.setStyleSheet(sty.getStyle(STYLE.resultLabelStyle))
         encode.setTextInteractionFlags(Qt.TextSelectableByMouse)
         encode.setCursor(QCursor(Qt.IBeamCursor))
         encode.show()
@@ -180,7 +179,7 @@ class Forward(Content):
         index_label = QLabel(self)
         index_label.setText("Index: " + str(label_val))
         index_label.setGeometry(QRect(first_encode_elem_x, first_encode_elem_y, 0, 0))
-        index_label.setStyleSheet(sty.getStyle(Style.resultLabelStyle))
+        index_label.setStyleSheet(sty.getStyle(STYLE.resultLabelStyle))
         index_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         index_label.setCursor(QCursor(Qt.IBeamCursor))
         index_label.show()

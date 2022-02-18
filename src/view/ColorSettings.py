@@ -3,7 +3,7 @@ from PyQt5.QtCore import QRect, Qt, pyqtSignal, QObject, QSize
 from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QColorDialog
 from enum import Enum
 import styles.Style as sty
-from styles.Style import Style
+from styles.Style import STYLE
 
 class ColorType(Enum):
     label = 'Label'
@@ -116,7 +116,7 @@ class ColorSetting(QWidget):
 
         preview_info = QLabel(self)
         preview_info.setText("Vorschau: ")
-        preview_info.setStyleSheet(sty.getStyle(Style.infoLabelStyle))
+        preview_info.setStyleSheet(sty.getStyle(STYLE.infoLabelStyle))
         x_start = background_btn.geometry().x()
         y_start = y_start + self._margin_bottom + preview_info.geometry().height()
         preview_info.setGeometry(QRect(x_start, y_start, preview_info.geometry().width(), preview_info.geometry().height()))

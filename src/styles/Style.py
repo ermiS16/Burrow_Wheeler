@@ -1,6 +1,6 @@
 from enum import Enum
 
-class Style(Enum):
+class STYLE(Enum):
     descriptionStyle = 'descriptionStyle'
     resultLabelStyle = 'resultLabelStyle'
     infoLabelStyle = 'infoLabelStyle'

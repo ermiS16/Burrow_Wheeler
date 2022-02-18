@@ -6,7 +6,7 @@ from controller.Speed import Speed
 from model.Description import Description
 from view.ColorSettings import Setting
 import styles.Style as sty
-from styles.Style import Style
+from styles.Style import STYLE
 
 class Content(QWidget):
 
@@ -244,7 +244,7 @@ class Content(QWidget):
         self._description.setDescription(desc)
         #self._description.resize(self._description.geometry().width(), self._description)
         self._description.setGeometry(QRect(desc_start_x, desc_start_y, desc_width, desc_height))
-        self._description.setStyleSheet(sty.getStyle(Style.descriptionStyle))
+        self._description.setStyleSheet(sty.getStyle(STYLE.descriptionStyle))
 
 
     def animateBackgroundColor(self, widget, start_color, end_color, start_color_text, end_color_text, duration=1000):
