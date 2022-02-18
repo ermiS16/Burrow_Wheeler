@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name='burrows-wheeler-transformation',
+    name='application',
     version='1.0',
     description="Gui Packages",
     author="Eric Misfeld",
