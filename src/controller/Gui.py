@@ -1,6 +1,7 @@
 import time
 import traceback
 
+from controller.Signals import Signals
 from model.Text import Text, TextTable
 from model import Text
 from model.Description import DESC, DescriptionSetting as desc_setting
@@ -18,10 +19,6 @@ from PyQt5.QtWidgets import QWidget, QMainWindow, QAction
 from PyQt5.QtCore import QObject, QThreadPool, QRunnable, pyqtSignal, QRect, QSize, Qt
 from view.ColorSettings import ColorType
 
-class ListenerSignals(QObject):
-    finished = pyqtSignal()
-    progress = pyqtSignal(int)
-    valueChanged = pyqtSignal()
 
 
 class AnimAllListener(QRunnable):
@@ -29,19 +26,19 @@ class AnimAllListener(QRunnable):
         super(AnimAllListener, self).__init__()
         self._func = func
         self._args = list[args]
-        self._signals = ListenerSignals()
+        self._signals = Signals()
         self._main = main
     def run(self):
         try:
             while(self._func.getAnimCounter() == 0):
-                if self._main.signals.finished:
-                    break
+                # if self._main.signals.finished:
+                #     break
 
                 time.sleep(0.001)
 
             while(self._func.getAnimCounter() > 0):
-                if self._main.signals.finished:
-                    break
+                # if self._main.signals.finished:
+                #     break
 
                 time.sleep(0.001)
 
@@ -64,7 +61,7 @@ class Gui(QMainWindow):
         self._state = State(STATE.INIT)
         self._threadpool = QThreadPool()
         self._animation_finished = 0
-        self.signals = ListenerSignals()
+        self.signals = Signals()
         self.initUI()
 
     #################### HELPER ####################

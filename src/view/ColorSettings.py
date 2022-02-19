@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QColorDialog
 from enum import Enum
 import styles.Style as sty
 from styles.Style import STYLE
+from controller.Signals import Signals
 
 class ColorType(Enum):
     label = 'Label'
@@ -29,10 +30,7 @@ class Setting(Enum):
     label_select_found_text = 'label_select_found_text'
     label_select_found_style = 'label_select_found_style'
 
-class Signals(QObject):
-    finished = pyqtSignal()
-    progress = pyqtSignal(int)
-    valueChanged = pyqtSignal()
+
 
 
 class ColorSetting(QWidget):
@@ -146,7 +144,7 @@ class ColorSetting(QWidget):
         self._close_btn.setText("Schließen")
         x_start = x_start + self._margin_left + self._close_btn.geometry().width()
         self._close_btn.setGeometry(QRect(x_start, y_start, self._close_btn.geometry().width(), self._close_btn.geometry().height()))
-        self._close_btn.clicked.connect(self.emitFinish)
+        self._close_btn.clicked.connect(self.close)
 
 
     def initTempColors(self):
@@ -266,10 +264,9 @@ class ColorSetting(QWidget):
 
         self.updateColorSettings()
 
-    def emitFinish(self):
-        self.signals.finished.emit()
 
     def closeEvent(self, event):
+        self.signals.finished.emit()
         if self.signals.finished:
             event.accept()
         else:
