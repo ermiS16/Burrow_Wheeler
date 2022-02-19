@@ -47,14 +47,12 @@ class Text:
         self._text_sorted = sorted(self._text)
         text_sorted_tmp = self._text_sorted.copy()
         text_tmp = [ch for ch in self._text]
-        pos = 0
         for ch in self._text:
             index_sorted = text_sorted_tmp.index(ch)
             index_rotation = text_tmp.index(ch)
             self._sorted_ref_dict[index_sorted] = index_rotation
             text_sorted_tmp[index_sorted] = None
             text_tmp[index_rotation] = None
-            pos = pos + 1
 
         ### Debug ###
         #self.printSortRefDict(self._sorted_ref_dict)
