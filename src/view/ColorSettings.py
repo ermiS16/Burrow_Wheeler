@@ -270,7 +270,6 @@ class ColorSetting(QWidget):
         self.signals.finished.emit()
 
     def closeEvent(self, event):
-        #print("Close Event")
         if self.signals.finished:
             event.accept()
         else:
