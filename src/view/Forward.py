@@ -1,11 +1,9 @@
 from enum import Enum
 
 from view.Content import Content
-from model.Description import DESC
 import styles.Style as sty
 from styles.Style import STYLE
 from view.ColorSettings import Setting
-from view.CustomLabel import CustomLabel
 
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QColor, QCursor
@@ -70,7 +68,6 @@ class Forward(Content):
         self.reset()
         row = []
         text = ""
-        #self.initDescription(DESC.forward_rotation)
         self.initDescription()
 
         info_label = QLabel(self)
@@ -224,6 +221,8 @@ class Forward(Content):
                 if(i == row):
                     self.animateBackgroundColor(label, start_color_background, end_color_background, start_color_text, end_color_text, duration=500)
                 elif(i == previous):
+                    # if found:
+                    #     print(str(i), start_color_background.name(), end_color_background.name(), start_color_text.name(), end_color_text.name())
                     self.animateBackgroundColor(label, end_color_background, start_color_background, end_color_text, start_color_text, duration=500)
 
     def showIndex(self, row):
@@ -366,7 +365,8 @@ class Forward(Content):
         table = self.getLastTableEntry(TableName.table.value)
 
         for label in table:
-            label_copy = CustomLabel(self)
+            label_copy = QLabel(self)
+            #label_copy = CustomLabel(self)
             label_copy.setAlignment(Qt.AlignCenter)
             label_copy.setText(str(label.text()))
             style = self._color_setting.get(Setting.label_animation_style.value)
