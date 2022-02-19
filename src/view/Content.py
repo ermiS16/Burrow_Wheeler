@@ -3,7 +3,6 @@ import functools
 from PyQt5.QtCore import QVariantAnimation, QRect
 from PyQt5.QtWidgets import QWidget
 from controller.Speed import Speed
-#from model.Description import Description
 from view.Description import Description
 from view.ColorSettings import Setting
 import styles.Style as sty
@@ -13,26 +12,26 @@ class Content(QWidget):
 
     def __init__(self, arg1):
         super(Content, self).__init__()
-        self._resultLabel = {}
+        self._result_label = {}
         self._x = 0
         self._y = 0
         self._width = 0
         self._height = 0
-        self._speedFactor = Speed()
+        self._speed_factor = 1
         self._color_setting = None
         self._description = None
         self._table_dict = {}
         self._info_label = {}
-        self._animCounter = 0
+        self._anim_counter = 0
 
     def setDescription(self, info):
         self._description.setDescription(info)
 
     def updateSpeed(self, factor):
-        self._speedFactor.update(factor)
+        self._speed_factor = factor
 
     def getSpeedFactor(self):
-        return self._speedFactor.getFactor()
+        return self._speed_factor
 
     def setColorSetting(self, setting):
         self._color_setting = setting
@@ -58,13 +57,13 @@ class Content(QWidget):
         self.initContent()
 
     def animCounterIncrease(self):
-        self._animCounter = self._animCounter + 1
+        self._anim_counter = self._anim_counter + 1
 
     def animCounterDecrease(self):
-        self._animCounter = self._animCounter - 1
+        self._anim_counter = self._anim_counter - 1
 
     def getAnimCounter(self):
-        return self._animCounter
+        return self._anim_counter
 
     def addTable(self, key, list):
         print("Key: " + str(key), list)
@@ -137,7 +136,7 @@ class Content(QWidget):
 
     def reset(self):
         self.deleteDict(self._info_label)
-        self.deleteDict(self._resultLabel)
+        self.deleteDict(self._result_label)
         for entry in self._table_dict:
             list = self._table_dict[entry]
             if list[1] == "label":
@@ -164,10 +163,10 @@ class Content(QWidget):
         return label_name in self._info_label
 
     def setResultLabel(self, key, val):
-        self._resultLabel[key] = val
+        self._result_label[key] = val
 
     def deleteResultLabel(self):
-        self.deleteDict(self._resultLabel)
+        self.deleteDict(self._result_label)
 
     def deleteInfoLabel(self):
         self.deleteDict(self._info_label)
@@ -241,7 +240,7 @@ class Content(QWidget):
 
 
     def animateBackgroundColor(self, widget, start_color, end_color, start_color_text, end_color_text, duration=1000):
-        duration = int(duration*self._speedFactor.getFactor())
+        duration = int(duration * self.getSpeedFactor())
 
         self.anim = QVariantAnimation(widget, duration=duration, startValue=start_color, endValue=end_color, loopCount=1)
         self.anim.valueChanged.connect(functools.partial(self.setLabelBackground, widget))
