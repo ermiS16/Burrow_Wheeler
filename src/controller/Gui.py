@@ -18,7 +18,6 @@ from PyQt5.QtWidgets import QWidget, QMainWindow, QAction
 from PyQt5.QtCore import QObject, QThreadPool, QRunnable, pyqtSignal, QRect, QSize, Qt
 from view.ColorSettings import ColorType
 
-
 class ListenerSignals(QObject):
     finished = pyqtSignal()
     progress = pyqtSignal(int)
@@ -26,17 +25,24 @@ class ListenerSignals(QObject):
 
 
 class AnimAllListener(QRunnable):
-    def __init__(self, func, *args):
+    def __init__(self, main, func, *args):
         super(AnimAllListener, self).__init__()
         self._func = func
         self._args = list[args]
         self._signals = ListenerSignals()
-
+        self._main = main
     def run(self):
         try:
             while(self._func.getAnimCounter() == 0):
+                if self._main.signals.finished:
+                    break
+
                 time.sleep(0.001)
+
             while(self._func.getAnimCounter() > 0):
+                if self._main.signals.finished:
+                    break
+
                 time.sleep(0.001)
 
         except:
@@ -58,6 +64,7 @@ class Gui(QMainWindow):
         self._state = State(STATE.INIT)
         self._threadpool = QThreadPool()
         self._animation_finished = 0
+        self.signals = ListenerSignals()
         self.initUI()
 
     #################### HELPER ####################
@@ -81,6 +88,13 @@ class Gui(QMainWindow):
         factor = self._control_panel.getSpeedFactor()
         self._control_panel.updateSpeedInfo()
         content.updateSpeed(factor)
+
+    def closeEvent(self, event):
+        self.signals.finished.emit()
+        if self.signals.finished:
+            event.accept()
+        else:
+            event.ignore()
 
     #################### INIT GUI ####################
 
@@ -336,7 +350,7 @@ class Gui(QMainWindow):
         self._control_panel.toggleControlPanelBtn()
 
     def createAnimCountListener(self, content):
-        self.anim_listener = AnimAllListener(content)
+        self.anim_listener = AnimAllListener(self, content)
         self.anim_listener._signals.finished.connect(self.animFinished)
         self._threadpool.start(self.anim_listener)
 
