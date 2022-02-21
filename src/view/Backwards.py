@@ -46,7 +46,6 @@ class Backwards(Content):
         self.setStyle(entry, style)
 
     def updateSelectColor(self, index):
-        print("Index: " + str(index))
         entry = self.getTableEntry(TableName.tableIndexSortReal.value, index)
         style = self._color_setting.get(Setting.label_select_style.value)
         self.setStyle(entry, style)
@@ -83,7 +82,6 @@ class Backwards(Content):
         info_label.setStyleSheet(sty.getStyle(STYLE.infoLabelStyle))
         x_start = self._right_box_x_start
         y_start = round(self._right_box_height / 2) - self._elem_margin_y
-        print(x_start, y_start)
         info_label.move(x_start, y_start)
         self.setInfoLabel('decoded_info', info_label)
 
@@ -118,7 +116,6 @@ class Backwards(Content):
     def selectSort(self, index):
         label = self.getTableEntry(TableName.table.value, index)
         index_label = self.getTableEntry(TableName.tableIndex.value, index)
-
 
         label_copy = QLabel(self)
         label_copy.setAlignment(Qt.AlignCenter)
@@ -158,19 +155,19 @@ class Backwards(Content):
 
         anim = QPropertyAnimation(label_copy, b"geometry")
         anim.setEndValue(QRect(label_copy.geometry().x(), label_copy.geometry().y(), int(label_copy.geometry().width()*1.3), int(label_copy.geometry().height()*1.3)))
-        speed = int(self.getSpeedFactor()*350)
+        speed = int(350/self.getSpeedFactor())
         anim.setDuration(speed)
         self.anim_group.addAnimation(anim)
 
         anim = QPropertyAnimation(label_copy, b"geometry")
         anim.setEndValue(QRect(label_copy.geometry().x(), label_copy.geometry().y(), label_copy.geometry().width(), label_copy.geometry().height()))
-        speed = int(self.getSpeedFactor()*350)
+        speed = int(350/self.getSpeedFactor())
         anim.setDuration(speed)
         self.anim_group.addAnimation(anim)
 
         anim = QPropertyAnimation(label_copy, b"pos")
         anim.setEndValue(QPoint(x_end, y_start))
-        speed = int(self.getSpeedFactor()*350)
+        speed = int(350/self.getSpeedFactor())
         anim.setDuration(speed)
         self.anim_group.addAnimation(anim)
 
@@ -178,7 +175,7 @@ class Backwards(Content):
 
         anim = QPropertyAnimation(index_label_copy, b"pos")
         anim.setEndValue(QPoint(x_end, y_start))
-        speed = int(self.getSpeedFactor()*350)
+        speed = int(350/self.getSpeedFactor())
         anim.setDuration(speed)
         self.anim_group.addAnimation(anim)
 
@@ -221,21 +218,21 @@ class Backwards(Content):
         anim = QPropertyAnimation(label_selected, b"geometry", self)
         anim.setEndValue(QRect(label_selected.geometry().x(), label_selected.geometry().y(), int(label_selected.geometry().width()*1.3),
                                int(label_selected.geometry().height()*1.3)))
-        speed = int(self.getSpeedFactor()*250)
+        speed = int(250/self.getSpeedFactor())
         anim.setDuration(speed)
 
         self.anim_group.addAnimation(anim)
 
         anim = QPropertyAnimation(label_selected, b"geometry", self)
         anim.setEndValue(QRect(label_selected.geometry().x(), label_selected.geometry().y(), self._label_width, self._label_height))
-        speed = int(self.getSpeedFactor()*250)
+        speed = int(250/self.getSpeedFactor())
         anim.setDuration(speed)
 
         self.anim_group.addAnimation(anim)
 
         anim = QPropertyAnimation(label_selected, b"pos", self)
         anim.setEndValue(QPoint(x_start, y_start))
-        speed = int(self.getSpeedFactor()*350)
+        speed = int(350/self.getSpeedFactor())
         anim.setDuration(speed)
         anim.start()
 
@@ -254,7 +251,6 @@ class Backwards(Content):
 
     def selectNextSortedIndex(self, index, prev_index, direction):
         speed = 500
-        print(index, prev_index)
         if direction == 'next':
             if index != None:
                 label = self.getTableEntry(TableName.tableIndexSortReal.value, index)
@@ -313,7 +309,7 @@ class Backwards(Content):
         anim.setEndValue(QRect(first_encode_elem_x, y_end,
                                int(decode.sizeHint().width()*2), int(decode.sizeHint().height()*2)))
 
-        speed = int(self.getSpeedFactor()*500)
+        speed = int(500/self.getSpeedFactor())
         anim.setDuration(speed)
         self.anim_group.addAnimation(anim)
         self.anim_group.finished.connect(self.animCounterDecrease)

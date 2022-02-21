@@ -2,8 +2,6 @@ import os
 import xml.etree.ElementTree as ET
 from enum import Enum
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QLabel, QScrollArea, QWidget, QVBoxLayout
 
 
 class DESC(Enum):

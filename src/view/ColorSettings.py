@@ -1,7 +1,9 @@
+from enum import Enum
+
 from PyQt5 import Qt
 from PyQt5.QtCore import QRect, Qt, pyqtSignal, QObject, QSize
 from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QColorDialog
-from enum import Enum
+
 import styles.Style as sty
 from styles.Style import STYLE
 from controller.Signals import Signals
@@ -204,7 +206,6 @@ class ColorSetting(QWidget):
         return self._color_settings
 
     def updateColorSettings(self):
-        #print("Update Color Settings")
         self._color_settings[Setting.label_background.value] = self._label_background
         self._color_settings[Setting.label_text.value] = self._label_text
         self._color_settings[Setting.label_style.value] = self._label_style
@@ -217,8 +218,6 @@ class ColorSetting(QWidget):
         self._color_settings[Setting.label_select_found_background.value] = self._label_select_found_background
         self._color_settings[Setting.label_select_found_text.value] = self._label_select_found_text
         self._color_settings[Setting.label_select_found_style.value] = self._label_select_found_style
-
-        #print(self._color_settings.get(Setting.label_style.value))
         self.signals.valueChanged.emit()
 
 
@@ -245,7 +244,6 @@ class ColorSetting(QWidget):
             self._label_background = self._background_tmp
             self._label_text = self._text_tmp
             self._label_style = self.getStyle(self._type)
-            print(self._label_style)
 
         if self._type == ColorType.animation.value:
             self._label_animation_background = self._background_tmp

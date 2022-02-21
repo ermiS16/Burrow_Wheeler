@@ -1,7 +1,9 @@
+from enum import Enum
+
 from PyQt5.QtWidgets import QLabel, QPushButton, QSlider, QLineEdit, QWidget, QComboBox, QColorDialog, QMessageBox
 from PyQt5.QtCore import QRect, QRegExp, Qt
 from PyQt5.QtGui import QRegExpValidator
-from enum import Enum
+
 from view.ColorSettings import ColorType
 
 class ElemKeys(Enum):
@@ -172,7 +174,6 @@ class ControlPanel(QWidget):
         self._controlBtnList = []
 
     def getSpeedFactor(self):
-        print(self._speed_slider.value())
         value = (self._speed_slider.value() / 5)
         return round(value, 2)
 
@@ -380,7 +381,6 @@ class ControlPanel(QWidget):
     def openColorDialog(self):
         color = QColorDialog.getColor()
         self._color = color.name()
-        #print(color.name())
 
     def getLabelColor(self):
         return self._color

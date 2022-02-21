@@ -2,7 +2,7 @@ import functools
 
 from PyQt5.QtCore import QVariantAnimation, QRect
 from PyQt5.QtWidgets import QWidget
-from controller.Speed import Speed
+
 from view.Description import Description
 from view.ColorSettings import Setting
 import styles.Style as sty
@@ -66,7 +66,6 @@ class Content(QWidget):
         return self._anim_counter
 
     def addTable(self, key, list):
-        print("Key: " + str(key), list)
         self._table_dict[key] = list
 
     def appendTable(self, table_name, entry):
@@ -156,7 +155,6 @@ class Content(QWidget):
             del dir[key]
 
     def setInfoLabel(self, key, val):
-        print("Set Info: " + str(key))
         self._info_label[key] = val
 
     def infoLabelExists(self, label_name):
@@ -239,8 +237,6 @@ class Content(QWidget):
 
 
     def animateLabelColor(self, widget, start_color, end_color, start_color_text, end_color_text, duration=1000):
-        duration = int(duration * self.getSpeedFactor())
-
         self.anim = QVariantAnimation(widget, duration=duration, startValue=start_color, endValue=end_color, loopCount=1)
         self.anim.valueChanged.connect(functools.partial(self.setLabelBackground, widget))
         self.anim.finished.connect(self.animCounterDecrease)

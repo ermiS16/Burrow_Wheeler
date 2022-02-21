@@ -7,7 +7,7 @@ class Window:
         self.screen_resolution = screen.geometry()
         self._screenWidth, self._screenHeight = self.screen_resolution.width(), self.screen_resolution.height()
         self._windowWidth, self._windowHeight = self.screen_resolution.width(), self.screen_resolution.height()
-        print(str(self._screenWidth) + ", " + str(self._screenHeight))
+        # print(str(self._screenWidth) + ", " + str(self._screenHeight))
 
     def getWindowWidth(self):
         return self._windowWidth
