@@ -36,16 +36,6 @@ class ControlPanel(QWidget):
         self._y = 0
         self._elem = {}
         self._controlBtnList = []
-        self.input_field_label = None
-        self.delta_field_label = None
-        self.input_field = None
-        self.delta_field = None
-        self.transform_button = None
-        self.next_button = None
-        self.prev_button = None
-        self.reset_button = None
-        self.speed_slider = None
-        self.directionCombo = None
 
         self._directions = [Direction.choose.value, Direction.forward.value, Direction.backwards.value]
         self._colorTypes = [ColorType.label.value, ColorType.animation.value, ColorType.select.value, ColorType.found.value]
@@ -60,11 +50,11 @@ class ControlPanel(QWidget):
         self._speed_slider = None
         self._speed_slider_label = None
         self._speed_info = None
-        self._directionCombo = None
-        self._labelColorButton = None
-        self._chooseColor = None
-        self._editColorButton = None
-        self._colorApplyButton = None
+        self._direction_combo = None
+        self._label_color_button = None
+        self._choose_color = None
+        self._edit_color_button = None
+        self._color_apply_button = None
 
         self._COUNT_ELEM_X = 7
 
@@ -110,15 +100,13 @@ class ControlPanel(QWidget):
         return self._elem.get(key.value)
 
     def removeComboBoxItems(self, combo):
-        #print("Combo Count: " + str(combo.count()))
         for i in range(combo.count()):
-            #print(combo.itemText(0))
             combo.removeItem(0)
 
     def setColorTypes(self, typeList):
         self._colorTypes = typeList
-        self.removeComboBoxItems(self._chooseColor)
-        self._chooseColor.addItems(typeList)
+        self.removeComboBoxItems(self._choose_color)
+        self._choose_color.addItems(typeList)
 
     def connectBtnOnClick(self, key, func):
         elem = self.getElem(key)
@@ -140,14 +128,9 @@ class ControlPanel(QWidget):
             self.toggleElem(btn)
 
     def toggleDeltaInput(self):
-        #print(self._directionCombo.currentText(), Direction.backwards.value)
-        if self._directionCombo.currentText() == Direction.backwards.value:
-            #print("Delta ON")
+        if self._direction_combo.currentText() == Direction.backwards.value:
             self._delta_field.setEnabled(True)
-            # self._delta_field.setText("2")
-            # self._input_field.setText("a!iepdWkii")
         else:
-            #print("Delta OFF")
             self._delta_field.setEnabled(False)
 
     def toggleElem(self, elem):
@@ -175,7 +158,7 @@ class ControlPanel(QWidget):
         self._delta_field.setText(index)
 
     def getDirection(self):
-        return self._directionCombo.currentText()
+        return self._direction_combo.currentText()
 
     def removeControlElement(self, elem):
         if elem != None:
@@ -188,32 +171,16 @@ class ControlPanel(QWidget):
 
         self._controlBtnList = []
 
-    def showWarning(self, code):
-        warning = QMessageBox(self)
-        warning.setIcon(QMessageBox.Warning)
-        warning.setWindowTitle("Warnung")
-        warning.setText(code.value)
-        warning.setStandardButtons(QMessageBox.Ok)
-        warning.buttonClicked(warning.close)
-
     def getSpeedFactor(self):
         print(self._speed_slider.value())
         value = (self._speed_slider.value() / 5)
-        print(value)
-        factor = (value ** -1)
-        #factor = 1
-        return factor
+        return round(value, 2)
 
     def updateSpeedInfo(self):
-        value = (self._speed_slider.value() / 5)
-        self._speed_info.setText(str(value) + "x")
+        self._speed_info.setText(str(self.getSpeedFactor()) + "x")
         self._speed_info.resize(self._speed_info.sizeHint().width(), self._speed_info.geometry().height())
 
-
     def initControl(self):
-
-        #print("Control Panel", self._width, self._height)
-
         self.removeControlElement(self._input_field_label)
         self.removeControlElement(self._input_field)
         self.removeControlElement(self._delta_field_label)
@@ -224,11 +191,11 @@ class ControlPanel(QWidget):
         self.removeControlElement(self._speed_slider)
         self.removeControlElement(self._speed_slider_label)
         self.removeControlElement(self._speed_info)
-        self.removeControlElement(self._directionCombo)
-        self.removeControlElement(self._labelColorButton)
-        self.removeControlElement(self._colorApplyButton)
-        self.removeControlElement(self._chooseColor)
-        self.removeControlElement(self._editColorButton)
+        self.removeControlElement(self._direction_combo)
+        self.removeControlElement(self._label_color_button)
+        self.removeControlElement(self._color_apply_button)
+        self.removeControlElement(self._choose_color)
+        self.removeControlElement(self._edit_color_button)
         self.clearControlBtnList()
 
         self._control_panel_width = self._width
@@ -298,24 +265,11 @@ class ControlPanel(QWidget):
         self._speed_info.setObjectName(ElemKeys.speed_info.value)
         speed_info_width = self._speed_info.geometry().width()
 
-        # self._speed_slider = QSpinBox(self)
-        # self._speed_slider.setObjectName(ElemKeys.speed_slider.value)
-        # self._speed_slider.setSuffix("x")
-        # self._speed_slider.setRange(0, 2)
-        # self._speed_slider.setStepType(QSpinBox.AdaptiveDecimalStepType)
-        # self._speed_slider.setValue(1)
-        # self._speed_slider.resize(self._speed_slider.sizeHint().width(), self._speed_slider.geometry().height())
-
         self._speed_slider = QSlider(Qt.Horizontal, self)
         self._speed_slider.setObjectName(ElemKeys.speed_slider.value)
         self._speed_slider.setGeometry(QRect(self._speed_slider.geometry().x(), self._speed_slider.geometry().y(),
                                        int(self._speed_slider.geometry().width()*1.5), int(self._speed_slider.geometry().height()*1.3)))
 
-        # self._speed_slider.setMinimum(1)
-        # self._speed_slider.setMaximum(14)
-        # self._speed_slider.setSingleStep(1)
-        # self._speed_slider.setValue(7)
-        # self._speed_slider.setTickInterval(1)
         self._speed_slider.setMinimum(1)
         self._speed_slider.setMaximum(10)
         self._speed_slider.setValue(5)
@@ -325,19 +279,19 @@ class ControlPanel(QWidget):
         self._speed_slider.valueChanged.connect(self.updateSpeedInfo)
         speed_slider_width = self._speed_slider.geometry().width()
 
-        self._directionCombo = QComboBox(self)
-        self._directionCombo.setObjectName(ElemKeys.direction_combo.value)
-        self._directionCombo.addItems(self._directions)
-        self._directionCombo.resize(self._directionCombo.sizeHint())
-        direction_width = self._directionCombo.geometry().width()
+        self._direction_combo = QComboBox(self)
+        self._direction_combo.setObjectName(ElemKeys.direction_combo.value)
+        self._direction_combo.addItems(self._directions)
+        self._direction_combo.resize(self._direction_combo.sizeHint())
+        direction_width = self._direction_combo.geometry().width()
 
-        self._chooseColor = QComboBox(self)
-        self._chooseColor.setObjectName(ElemKeys.choose_color_combo.value)
-        self._chooseColor.addItems(self._colorTypes)
+        self._choose_color = QComboBox(self)
+        self._choose_color.setObjectName(ElemKeys.choose_color_combo.value)
+        self._choose_color.addItems(self._colorTypes)
 
-        self._editColorButton = QPushButton(self)
-        self._editColorButton.setText("Farbe editieren")
-        self._editColorButton.setEnabled(False)
+        self._edit_color_button = QPushButton(self)
+        self._edit_color_button.setText("Farbe editieren")
+        self._edit_color_button.setEnabled(False)
 
 
         elem_all_width = (elem_margin_x * self._COUNT_ELEM_X) + input_field_width + input_field_width + \
@@ -357,7 +311,7 @@ class ControlPanel(QWidget):
 
         x_start = x_start + input_field_width + elem_margin_x
         #print("Direction", x_start, input_field_width, elem_margin_x)
-        self._directionCombo.move(x_start, y_start)
+        self._direction_combo.move(x_start, y_start)
 
         x_start = x_start + direction_width + elem_margin_x
         #print("Next Button", x_start, direction_width, elem_margin_x)
@@ -389,13 +343,13 @@ class ControlPanel(QWidget):
         self._transform_button.move(x_start, y_start)
 
         x_start = self._next_button.geometry().x()
-        self._chooseColor.move(x_start, y_start)
+        self._choose_color.move(x_start, y_start)
 
-        x_start = x_start + self._chooseColor.geometry().width() + elem_margin_x
-        self._editColorButton.move(x_start, y_start)
+        x_start = x_start + self._choose_color.geometry().width() + elem_margin_x
+        self._edit_color_button.move(x_start, y_start)
 
-        self._directionCombo.model().item(0).setEnabled(False)
-        self._directionCombo.currentTextChanged.connect(self.toggleDeltaInput)
+        self._direction_combo.model().item(0).setEnabled(False)
+        self._direction_combo.currentTextChanged.connect(self.toggleDeltaInput)
 
         x_start = self._speed_slider_label.geometry().x()
         #print("Speed Slider", x_start, prev_btn_width, elem_margin_x)
@@ -409,19 +363,19 @@ class ControlPanel(QWidget):
         self.setElem(ElemKeys.transform_button.value, self._transform_button)
         self.setElem(ElemKeys.next_button.value, self._next_button)
         self.setElem(ElemKeys.prev_button.value, self._prev_button)
-        self.setElem(ElemKeys.direction_combo.value, self._directionCombo)
+        self.setElem(ElemKeys.direction_combo.value, self._direction_combo)
         self.setElem(ElemKeys.speed_slider.value, self._speed_slider)
         self.setElem(ElemKeys.speed_slider_label.value, self._speed_slider_label)
         self.setElem(ElemKeys.speed_info.value, self._speed_info)
-        self.setElem(ElemKeys.label_color_button.value, self._labelColorButton)
-        self.setElem(ElemKeys.choose_color_combo.value, self._chooseColor)
-        self.setElem(ElemKeys.edit_color_button.value, self._editColorButton)
-        self.setElem(ElemKeys.color_apply_button.value, self._colorApplyButton)
+        self.setElem(ElemKeys.label_color_button.value, self._label_color_button)
+        self.setElem(ElemKeys.choose_color_combo.value, self._choose_color)
+        self.setElem(ElemKeys.edit_color_button.value, self._edit_color_button)
+        self.setElem(ElemKeys.color_apply_button.value, self._color_apply_button)
 
         self._controlBtnList.append(self._transform_button)
         self._controlBtnList.append(self._next_button)
         self._controlBtnList.append(self._prev_button)
-        self._controlBtnList.append(self._editColorButton)
+        self._controlBtnList.append(self._edit_color_button)
 
     def openColorDialog(self):
         color = QColorDialog.getColor()

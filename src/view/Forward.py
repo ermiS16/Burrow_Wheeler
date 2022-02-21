@@ -151,7 +151,6 @@ class Forward(Content):
         encode_label = self.getTableEntry(TableName.tableEncode.value, 0)
         first_encode_elem_y = encode_label.geometry().y()
         first_encode_elem_x = encode_label.geometry().x()
-        first_encode_elem_height = encode_label.geometry().height()
         self.anim_group = QSequentialAnimationGroup(self)
 
         label = self.getTableEntry(TableName.tableIndex.value, row)
@@ -181,8 +180,7 @@ class Forward(Content):
         index_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         index_label.setCursor(QCursor(Qt.IBeamCursor))
         index_label.show()
-
-        y_end = first_encode_elem_y + (self._elem_margin_y*2) + (first_encode_elem_height*2)
+        y_end = first_encode_elem_y + self._label_line_margin_double + self._elem_margin_y
         anim = QPropertyAnimation(index_label, b"geometry")
         anim.setEndValue(QRect(first_encode_elem_x, y_end,
                                int(index_label.sizeHint().width()*2), int(index_label.sizeHint().height()*2)))
@@ -219,11 +217,11 @@ class Forward(Content):
         for i in range(len(tableSort)):
             for label in tableSort[i]:
                 if(i == row):
-                    self.animateBackgroundColor(label, start_color_background, end_color_background, start_color_text, end_color_text, duration=500)
+                    self.animateLabelColor(label, start_color_background, end_color_background, start_color_text, end_color_text, duration=500)
                 elif(i == previous):
                     # if found:
                     #     print(str(i), start_color_background.name(), end_color_background.name(), start_color_text.name(), end_color_text.name())
-                    self.animateBackgroundColor(label, end_color_background, start_color_background, end_color_text, start_color_text, duration=500)
+                    self.animateLabelColor(label, end_color_background, start_color_background, end_color_text, start_color_text, duration=500)
 
     def showIndex(self, row):
 
@@ -300,12 +298,12 @@ class Forward(Content):
         self.animCounterIncrease()
         self.anim_group.start()
 
-        speed = int(350*self._speedFactor.getFactor())
+        speed = int(350*self.getSpeedFactor())
         start_color_background = QColor(self._color_setting.get(Setting.label_animation_background.value))
         start_color_text = QColor(self._color_setting.get(Setting.label_animation_text.value))
         end_color_background = QColor(self._color_setting.get(Setting.label_background.value))
         end_color_text = QColor(self._color_setting.get(Setting.label_text.value))
-        self.animateBackgroundColor(last_char, start_color_background, end_color_background, start_color_text,
+        self.animateLabelColor(last_char, start_color_background, end_color_background, start_color_text,
                                     end_color_text, duration=speed)
 
         self.appendTable(TableName.tableEncode.value, last_char)
@@ -336,7 +334,7 @@ class Forward(Content):
                 first = False
             else:
                 x_start = x_start + self._label_width + self._elem_margin_x
-                x_end = x_start #+ self._elem_margin_x
+                x_end = x_start
 
             anim = QPropertyAnimation(label, b"pos")
             anim.setEndValue(QPoint(x_end, y_start))
@@ -348,13 +346,13 @@ class Forward(Content):
         self.animCounterIncrease()
         self.anim_group.start()
 
-        speed = int(200*len(copy_table)*self._speedFactor.getFactor())
+        speed = int(200*len(copy_table)*self.getSpeedFactor())
         for label in copy_table:
             start_color_background = QColor(self._color_setting.get(Setting.label_animation_background.value))
             start_color_text = QColor(self._color_setting.get(Setting.label_animation_text.value))
             end_color_background = QColor(self._color_setting.get(Setting.label_background.value))
             end_color_text = QColor(self._color_setting.get(Setting.label_text.value))
-            self.animateBackgroundColor(label, start_color_background, end_color_background, start_color_text, end_color_text, duration=speed)
+            self.animateLabelColor(label, start_color_background, end_color_background, start_color_text, end_color_text, duration=speed)
 
         self.appendTable(TableName.tableSort.value, copy_table)
 
@@ -366,7 +364,6 @@ class Forward(Content):
 
         for label in table:
             label_copy = QLabel(self)
-            #label_copy = CustomLabel(self)
             label_copy.setAlignment(Qt.AlignCenter)
             label_copy.setText(str(label.text()))
             style = self._color_setting.get(Setting.label_animation_style.value)
@@ -380,11 +377,10 @@ class Forward(Content):
         for label in copy_table:
             x_start = label.geometry().x()
             y_start = label.geometry().y()
-            y_end = y_start + (label.geometry().height()*2)
+            y_end = y_start + self._label_line_margin  # (label.geometry().height()*2)
             anim = QPropertyAnimation(label, b"pos")
-            anim.setEasingCurve(QEasingCurve.OutBounce)
             anim.setEndValue(QPoint(x_start, y_end))
-            speed = int(self.getSpeedFactor()*300)
+            speed = int(300/self.getSpeedFactor())
             anim.setDuration(speed)
             par_anim_group.addAnimation(anim)
 
@@ -394,30 +390,31 @@ class Forward(Content):
 
         anim = QPropertyAnimation(last_label, b"pos")
         anim.setEndValue(QPoint(last_label.geometry().x(), first_pos.y() + self._label_line_margin_double))
-        speed = int(self.getSpeedFactor()*200)
+        speed = int(200/self.getSpeedFactor())
         anim.setDuration(speed)
         self.anim_group.addAnimation(anim)
 
         for i in range(len(copy_table)-2, -1, -1):
             label = copy_table[i]
             y_start = label.geometry().y()
-            y_end = y_start + (label.geometry().height()*2)
+            y_end = y_start + self._label_line_margin   # (label.geometry().height()*2)
             x_end = copy_table[i+1].geometry().x()
             anim = QPropertyAnimation(label, b"pos")
             anim.setEndValue(QPoint(x_end, y_end))
-            speed = int(self.getSpeedFactor()*150)
+            speed = int(150/self.getSpeedFactor())
             anim.setDuration(speed)
             self.anim_group.addAnimation(anim)
 
         anim = QPropertyAnimation(last_label, b"pos")
         anim.setEndValue(QPoint(first_pos.x(), first_pos.y() + self._label_line_margin_double))
-        speed = int(self.getSpeedFactor()*400)
+        speed = int(400/self.getSpeedFactor())
         anim.setDuration(speed)
         self.anim_group.addAnimation(anim)
 
         anim = QPropertyAnimation(last_label, b"pos")
         anim.setEndValue(QPoint(first_pos.x(), first_pos.y() + self._label_line_margin))
-        speed = int(self.getSpeedFactor()*400)
+        speed = int(400/self.getSpeedFactor())
+        print("Speed: " + str(speed))
         anim.setDuration(speed)
         self.anim_group.addAnimation(anim)
         self.anim_group.finished.connect(self.animCounterDecrease)
@@ -430,10 +427,9 @@ class Forward(Content):
             start_color_text = QColor(self._color_setting.get(Setting.label_animation_text.value))
             end_color_background = QColor(self._color_setting.get(Setting.label_background.value))
             end_color_text = QColor(self._color_setting.get(Setting.label_text.value))
-            self.animateBackgroundColor(label, start_color_background, end_color_background, start_color_text, end_color_text, duration=speed)
+            self.animateLabelColor(label, start_color_background, end_color_background, start_color_text, end_color_text, duration=speed)
 
 
         table_rotated = self.rotateTable(copy_table)
-        #table_rotated = self._utils_table.rotateTable(copy_table)
         self.appendTable(TableName.table.value, table_rotated)
 

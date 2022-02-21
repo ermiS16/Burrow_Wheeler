@@ -233,13 +233,12 @@ class Content(QWidget):
         desc_height = (self._right_box_height * 0.25)
 
         self._description = Description(self)
-        #self._description.setDescription(desc)
         self._description.setDescription("")
         self._description.setGeometry(QRect(desc_start_x, desc_start_y, desc_width, desc_height))
         self._description.setStyleSheet(sty.getStyle(STYLE.descriptionStyle))
 
 
-    def animateBackgroundColor(self, widget, start_color, end_color, start_color_text, end_color_text, duration=1000):
+    def animateLabelColor(self, widget, start_color, end_color, start_color_text, end_color_text, duration=1000):
         duration = int(duration * self.getSpeedFactor())
 
         self.anim = QVariantAnimation(widget, duration=duration, startValue=start_color, endValue=end_color, loopCount=1)

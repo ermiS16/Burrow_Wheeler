@@ -1,7 +1,6 @@
 from enum import Enum
 
 from PyQt5.QtCore import Qt, QRect, QSequentialAnimationGroup, QPropertyAnimation, QPoint
-from model.Description import DESC
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QColor, QCursor
 
@@ -60,7 +59,6 @@ class Backwards(Content):
 
     def initContent(self):
         self.reset()
-        #self.initDescription(DESC.backward_sort)
         self.initDescription()
 
         x_start = self._left_box_x_start
@@ -155,8 +153,8 @@ class Backwards(Content):
             x_end = x_start + self._label_width + self._elem_margin_x
 
         y_start = label.geometry().y()
-
-        real_index_label.move(x_end, (label_copy.geometry().y() - self._label_line_margin))
+        y_end = label_copy.geometry().y() - self._label_line_margin
+        real_index_label.move(x_end, y_end)
 
         anim = QPropertyAnimation(label_copy, b"geometry")
         anim.setEndValue(QRect(label_copy.geometry().x(), label_copy.geometry().y(), int(label_copy.geometry().width()*1.3), int(label_copy.geometry().height()*1.3)))
@@ -193,7 +191,7 @@ class Backwards(Content):
         start_color_text = QColor(self._color_setting.get(Setting.label_animation_text.value))
         end_color_background = QColor(self._color_setting.get(Setting.label_background.value))
         end_color_text = QColor(self._color_setting.get(Setting.label_text.value))
-        self.animateBackgroundColor(label_copy, start_color_background, end_color_background, start_color_text, end_color_text, duration=speed)
+        self.animateLabelColor(label_copy, start_color_background, end_color_background, start_color_text, end_color_text, duration=speed)
 
         self.appendTable(TableName.tableSort.value, label_copy)
         self.appendTable(TableName.tableIndexSort.value, index_label_copy)
@@ -251,7 +249,7 @@ class Backwards(Content):
         start_color_text = QColor(self._color_setting.get(Setting.label_animation_text.value))
         end_color_background = QColor(self._color_setting.get(Setting.label_background.value))
         end_color_text = QColor(self._color_setting.get(Setting.label_text.value))
-        self.animateBackgroundColor(label_selected, start_color_background, end_color_background, start_color_text, end_color_text, duration=speed)
+        self.animateLabelColor(label_selected, start_color_background, end_color_background, start_color_text, end_color_text, duration=speed)
         self.appendTable(TableName.tableDecode.value, label_selected)
 
     def selectNextSortedIndex(self, index, prev_index, direction):
@@ -264,7 +262,7 @@ class Backwards(Content):
                 end_color = QColor(self._color_setting.get(Setting.label_select_background.value))
                 start_color_text = QColor(self._color_setting.get(Setting.label_default_text.value))
                 end_color_text = QColor(self._color_setting.get(Setting.label_select_text.value))
-                self.animateBackgroundColor(label, start_color, end_color, start_color_text, end_color_text, duration=speed)
+                self.animateLabelColor(label, start_color, end_color, start_color_text, end_color_text, duration=speed)
                 label.setStyleSheet(self._color_setting.get(Setting.label_select_style.value))
 
             if prev_index != None:
@@ -273,7 +271,7 @@ class Backwards(Content):
                 end_color = QColor(self._color_setting.get(Setting.label_select_found_background.value))
                 start_color_text = QColor(self._color_setting.get(Setting.label_select_text.value))
                 end_color_text = QColor(self._color_setting.get(Setting.label_select_found_text.value))
-                self.animateBackgroundColor(label, start_color, end_color, start_color_text, end_color_text, duration=speed)
+                self.animateLabelColor(label, start_color, end_color, start_color_text, end_color_text, duration=speed)
                 label.setStyleSheet(self._color_setting.get(Setting.label_select_style.value))
 
         if direction == 'prev':
@@ -283,7 +281,7 @@ class Backwards(Content):
                 end_color = QColor(self._color_setting.get(Setting.label_select_background.value))
                 start_color_text = QColor(self._color_setting.get(Setting.label_select_found_text.value))
                 end_color_text = QColor(self._color_setting.get(Setting.label_select_text.value))
-                self.animateBackgroundColor(label, start_color, end_color, start_color_text, end_color_text, duration=speed)
+                self.animateLabelColor(label, start_color, end_color, start_color_text, end_color_text, duration=speed)
                 label.setStyleSheet(self._color_setting.get(Setting.label_select_style.value))
 
             if prev_index != None:
@@ -292,7 +290,7 @@ class Backwards(Content):
                 end_color = QColor(self._color_setting.get(Setting.label_default_background.value))
                 start_color_text = QColor(self._color_setting.get(Setting.label_select_text.value))
                 end_color_text = QColor(self._color_setting.get(Setting.label_default_text.value))
-                self.animateBackgroundColor(label, start_color, end_color, start_color_text, end_color_text, duration=speed)
+                self.animateLabelColor(label, start_color, end_color, start_color_text, end_color_text, duration=speed)
                 label.setStyleSheet(self._color_setting.get(Setting.label_select_style.value))
 
     def showFinalDecodeLabel(self, decoded):

@@ -16,7 +16,7 @@ from view.ColorSettings import ColorSetting
 from view.Warning import Warning as warn
 
 from PyQt5.QtWidgets import QWidget, QMainWindow, QAction
-from PyQt5.QtCore import QObject, QThreadPool, QRunnable, pyqtSignal, QRect, QSize, Qt
+from PyQt5.QtCore import QThreadPool, QRunnable, QRect, QSize
 from view.ColorSettings import ColorType
 
 
@@ -365,7 +365,6 @@ class Gui(QMainWindow):
                 self._state.setState(STATE.F_SORT)
                 self._step.reset()
                 self._content.setDescription(self._description_setting.getDescription(DESC.forward_sort))
-                #self._content.setDescription(DESC.forward_sort)
             else:
                 self._control_panel.toggleControlPanelBtn()
                 self.createAnimCountListener(self._content)
@@ -378,7 +377,6 @@ class Gui(QMainWindow):
                 self._state.setState(STATE.F_ENCODE)
                 self._step.reset()
                 self._content.setDescription(self._description_setting.getDescription(DESC.forward_encode))
-                #self._content.setDescription(DESC.forward_encode)
             else:
                 self._control_panel.toggleControlPanelBtn()
                 self.createAnimCountListener(self._content)
@@ -392,7 +390,6 @@ class Gui(QMainWindow):
                 self._state.setState(STATE.F_INDEX_SHOW)
                 self._step.reset()
                 self._content.setDescription(self._description_setting.getDescription(DESC.forward_index))
-                #self._content.setDescription(DESC.forward_index)
             else:
                 self._control_panel.toggleControlPanelBtn()
                 self.createAnimCountListener(self._content)
@@ -419,7 +416,6 @@ class Gui(QMainWindow):
                 self._content.selectIndex(self._step.getStep(), "next", found=True)
                 self._state.setState(STATE.F_INDEX_FINAL)
                 self._content.setDescription(self._description_setting.getDescription(DESC.forward_end))
-                #self._content.setDescription(DESC.forward_end)
             else:
                 self._control_panel.toggleControlPanelBtn()
                 self.createAnimCountListener(self._content)
@@ -468,7 +464,6 @@ class Gui(QMainWindow):
                 self._state.setState(STATE.F_ROTATION)
                 self._step.setStep((self._step.MAX - 1))
                 self._content.setDescription(self._description_setting.getDescription(DESC.forward_rotation))
-                #self._content.setDescription(DESC.forward_rotation)
 
         elif (self._state.getState() == STATE.F_ENCODE):
             self._step.decrease()
@@ -484,7 +479,6 @@ class Gui(QMainWindow):
                 self._state.setState(STATE.F_SORT)
                 self._step.setStep((self._step.MAX - 1))
                 self._content.setDescription(self._description_setting.getDescription(DESC.forward_sort))
-                #self._content.setDescription(DESC.forward_sort)
 
         elif (self._state.getState() == STATE.F_INDEX_SHOW):
             for i in range(self._step.MAX):
@@ -493,7 +487,6 @@ class Gui(QMainWindow):
                 self._state.setState(STATE.F_ENCODE)
                 self._step.setStep((self._step.MAX - 1))
                 self._content.setDescription(self._description_setting.getDescription(DESC.forward_encode))
-                #self._content.setDescription(DESC.forward_encode)
                 self._f_show_index = False
 
         elif (self._state.getState() == STATE.F_INDEX_SELECT):
@@ -517,8 +510,6 @@ class Gui(QMainWindow):
             self._state.setState(STATE.F_INDEX_SELECT)
             self._content.deleteResultLabel()
             self._content.setDescription(self._description_setting.getDescription(DESC.forward_index))
-            #self._content.setDescription(DESC.forward_index)
-
 
     #################### BACKWARDS STEP LOGIC ####################
 
@@ -539,7 +530,6 @@ class Gui(QMainWindow):
                     self._state.setState(STATE.B_ITERATE)
                     self._step.reset()
                     self._content.setDescription(self._description_setting.getDescription(DESC.backward_iterate))
-                    #self._content.setDescription(DESC.backward_iterate)
                 else:
                     index = self._b_text_input.getRef(self._step.getStep())
                     self._control_panel.toggleControlPanelBtn()
@@ -555,7 +545,6 @@ class Gui(QMainWindow):
                 if self._step.isMAX():
                     self._state.setState(STATE.B_SHOW_RESULT)
                     self._content.setDescription(self._description_setting.getDescription(DESC.backward_end))
-                    #self._content.setDescription(DESC.backward_end)
                 else:
                     if self._step.getStep() == 0:
                         self._b_index_select_sorted = self._b_index_input
@@ -627,7 +616,6 @@ class Gui(QMainWindow):
             if self._step.getStep() < 0:
                 self._state.setState(STATE.B_SORT)
                 self._content.setDescription(self._description_setting.getDescription(DESC.backward_sort))
-                #self._content.setDescription(DESC.backward_sort)
                 self._step.setStep(self._step.MAX-1)
                 self._content.removeLastSortLabel()
 
@@ -640,5 +628,3 @@ class Gui(QMainWindow):
             self._content.deleteResultLabel()
             self._state.setState(STATE.B_ITERATE)
             self._content.setDescription(self._description_setting.getDescription(DESC.backward_iterate))
-            #self._content.setDescription(DESC.backward_iterate)
-
